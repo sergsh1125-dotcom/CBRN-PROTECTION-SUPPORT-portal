@@ -1,152 +1,149 @@
 import streamlit as st
-import pandas as pd
-import os
+import streamlit.components.v1 as components
 
-# 1. Налаштування сторінки
+# --- 1. НАЛАШТУВАННЯ СТОРІНКИ ТА ІКОНКИ ---
+# Замініть YOUR_REPO на вашу назву репозиторію
+ICON_URL = "https://raw.githubusercontent.com/sergsh1125-dotcom/YOUR_REPO/main/icon.png"
+
 st.set_page_config(
-    page_title="ДСНС | РХБ захист",
-    page_icon="☢️",
-    layout="wide"
+    page_title="ДСНС - ОФІС CBRN",
+    page_icon=ICON_URL,
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# 2. Мета-дані для іконки ярлика та стилізація
-# ЗАМІНІТЬ 'YOUR_REPO' на назву вашого репозиторію
-icon_url = "https://raw.githubusercontent.com/sergsh1125-dotcom/YOUR_REPO/main/icon.png"
+# --- 2. ПЕРЕВІРКА ПАРОЛЯ (ЗБЕРЕЖЕННЯ СЕСІЇ) ---
+def check_password():
+    """Повертає True, якщо пароль вірний. Стан зберігається в сесії."""
+    if "password_correct" not in st.session_state:
+        st.session_state["password_correct"] = False
 
+    if st.session_state["password_correct"]:
+        return True
+
+    # Екран входу
+    st.markdown("""
+        <style>
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10%;
+            padding: 40px;
+            background-color: #1b1e23;
+            border: 2px solid #ffcc00;
+            border-radius: 15px;
+            width: 350px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    with st.container():
+        st.markdown('<div class="login-container">', unsafe_allow_html=True)
+        st.image(ICON_URL, width=100)
+        st.markdown('<h2 style="color:#ffcc00; text-align:center;">CBRN OFFICE</h2>', unsafe_allow_html=True)
+        password = st.text_input("Введіть код доступу:", type="password")
+        if st.button("УВІЙТИ"):
+            if password == "1125":  # ВАШ ПАРОЛЬ
+                st.session_state["password_correct"] = True
+                st.rerun()
+            else:
+                st.error("❌ Доступ обмежено")
+        st.markdown('</div>', unsafe_allow_html=True)
+    return False
+
+if not check_password():
+    st.stop()
+
+# --- 3. СТИЛІЗАЦІЯ ІНТЕРФЕЙСУ (ПІСЛЯ ВХОДУ) ---
 st.markdown(f"""
     <head>
-        <link rel="apple-touch-icon" href="{icon_url}">
-        <link rel="icon" href="{icon_url}" type="image/png">
+        <link rel="apple-touch-icon" href="{ICON_URL}">
+        <link rel="icon" href="{ICON_URL}" type="image/png">
         <meta name="apple-mobile-web-app-capable" content="yes">
     </head>
     <style>
-    /* Темна тема з золотими акцентами */
-    .stApp {{
-        background-color: #0e1117;
-        color: #e0e0e0;
-    }}
+    #MainMenu {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
+    header {{visibility: hidden;}}
+    .stApp {{background-color: #0e1117; color: #e0e0e0;}}
     
-    /* Заголовки */
-    h1, h2, h3 {{
-        color: #ffcc00 !important;
-        font-family: 'Segoe UI', Roboto, sans-serif;
-    }}
-
-    /* Картки модулів */
-    .module-card {{
-        background-color: #1b1e23;
-        padding: 20px;
-        border-radius: 15px;
-        border: 1px solid #3d444d;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        margin-bottom: 20px;
-    }}
-
-    /* Кнопки в стилі ДСНС (Золото на темному) */
-    div.stButton > button, a.stLinkButton {{
-        background-color: #ffcc00 !important;
-        color: #000000 !important;
-        border-radius: 8px !important;
-        padding: 14px !important;
-        width: 100% !important;
-        font-weight: bold !important;
+    .main-title {{color: #ffcc00; text-align: center; font-size: 26px; font-weight: bold; margin-bottom: 0px;}}
+    .sub-title {{color: #ffcc00; text-align: center; font-size: 20px; margin-bottom: 20px; font-weight: 400;}}
+    
+    .module-header {{
+        color: #ffcc00; 
+        border-bottom: 1px solid #3d444d; 
+        margin-top: 15px; 
+        margin-bottom: 10px; 
+        font-weight: bold; 
+        font-size: 14px; 
         text-transform: uppercase;
-        border: none !important;
-        transition: 0.3s;
+    }}
+
+    div.stButton > button, a.stLinkButton {{
+        background-color: #1b1e23 !important; 
+        color: #e0e0e0 !important;
+        border: 1px solid #3d444d !important; 
+        border-radius: 4px !important;
+        padding: 8px !important;
+        width: 100% !important; 
+        text-align: left !important;
+        font-size: 13px !important;
+        margin-bottom: 5px !important;
     }}
     
     div.stButton > button:hover, a.stLinkButton:hover {{
-        background-color: #e6b800 !important;
-        transform: scale(1.02);
-    }}
-
-    /* Стиль табів */
-    .stTabs [data-baseweb="tab-list"] {{
-        background-color: #1b1e23;
-        border-radius: 10px;
-    }}
-    
-    .stTabs [data-baseweb="tab"] {{
-        color: #ffffff;
-    }}
-    
-    .stTabs [aria-selected="true"] {{
+        border-color: #ffcc00 !important; 
         color: #ffcc00 !important;
-        border-bottom-color: #ffcc00 !important;
-    }}
-
-    /* Таблиці */
-    [data-testid="stDataFrame"] {{
-        background-color: #1b1e23;
-        border-radius: 10px;
     }}
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# --- ВЕРХНЯ ПАНЕЛЬ ---
-col_logo, col_title = st.columns([1, 4])
-with col_logo:
-    # Якщо іконка вже завантажена на GitHub, вона з'явиться тут
-    st.image(icon_url, width=100)
-with col_title:
-    st.title("ПЛАТФОРМА ПІДТРИМКИ РХБ ЗАХИСТУ")
-    st.write("🚒 **ДСНС УКРАЇНИ** | Оперативне управління")
+# --- 4. ШАПКА ПОРТАЛУ ---
+st.markdown('<p class="main-title">ПЛАТФОРМА ПІДТРИМКИ РХБ ЗАХИСТУ</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">ДСНС - ОФІС CBRN</p>', unsafe_allow_html=True)
 
-st.divider()
+# --- 5. ОСНОВНИЙ РОБОЧИЙ ПРОСТІР ---
+col_left, col_center, col_right = st.columns([1.2, 3, 1.2])
 
-# --- МОДУЛЬ 1: ОБСТАНОВКА ---
-st.markdown('<div class="module-card">', unsafe_allow_html=True)
-st.subheader("🌐 1. МОНІТОРІНГ ОБСТАНОВКИ")
-c1, c2 = st.columns(2)
-with c1:
-    st.link_button("📊 1.1. Радіаційний моніторинг", "https://sergsh1125-dotcom-radiation-situation-app-vlg9fu.streamlit.app/")
-    st.link_button("☢️ 1.3. Фактична рад. обстановка", "https://sergsh1125-dotcom-radiation-situation-app-vlg9fu.streamlit.app/")
-with c2:
-    st.link_button("🚀 1.2. Прогноз хім. обстановки", "http://forecast.inf.ua/")
-    st.link_button("☣️ 1.4. Фактична хім. обстановка", "https://sergsh1125-dotcom-chemical-map-app-rhopcd.streamlit.app/")
-st.markdown('</div>', unsafe_allow_html=True)
+# ЛІВА КОЛОНКА
+with col_left:
+    st.markdown('<p style="color:#ffcc00; font-weight:bold; font-size:16px;">📱 ПАНЕЛЬ УПРАВЛІННЯ</p>', unsafe_allow_html=True)
+    
+    st.markdown('<p class="module-header">МОДУЛЬ 1. РХБ ОБСТАНОВКА</p>', unsafe_allow_html=True)
+    st.link_button("1.1. Карта рад. моніторингу", "https://sergsh1125-dotcom-radiation-situation-app-vlg9fu.streamlit.app/")
+    st.link_button("1.2. Карта прогнозу хім. обстановки", "http://forecast.inf.ua/")
+    st.link_button("1.3. Карта факт. рад. обстановки", "https://sergsh1125-dotcom-radiation-situation-app-vlg9fu.streamlit.app/")
+    st.link_button("1.4. Карта факт. хім. обстановки", "https://sergsh1125-dotcom-chemical-map-app-rhopcd.streamlit.app/")
+    
+    st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
+    st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
+    st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
-# --- МОДУЛЬ 2 & 3: БД ТА КАЛЬКУЛЯТОРИ ---
-col_db, col_calc = st.columns(2)
+# ЦЕНТРАЛЬНА КОЛОНКА (КАРТА)
+with col_center:
+    # Google Maps з параметром для стабільної роботи
+    components.iframe("https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2600000!2d31.1!3d48.5!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1suk!2sua!4v1700000000000", height=600)
 
-with col_db:
-    st.markdown('<div class="module-card">', unsafe_allow_html=True)
-    st.subheader("🧪 2. БАЗА ДАНИХ НХР")
-    st.link_button("📋 2.1. Аварійні картки", "https://sergsh1125-dotcom.github.io/emergency-cards/")
-    st.link_button("⚠️ 2.2. Рівні впливу БОР", "#")
-    st.markdown('</div>', unsafe_allow_html=True)
+# ПРАВА КОЛОНКА
+with col_right:
+    st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
+    st.link_button("3.1. Доза опромінення", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
+    st.link_button("3.2. Час перебування", "https://sergsh1125-dotcom.github.io/calculator-time/")
+    
+    st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКА</p>', unsafe_allow_html=True)
+    st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
+    
+    # Випадаючий список для СОП та НПА
+    with st.expander("📄 4.2. СОП та НПА"):
+        st.link_button("📜 СОП №1 (Сайт ДСНС)", "https://dsns.gov.ua/")
+        st.link_button("⚖️ Нормативна база", "https://zakon.rada.gov.ua/")
 
-with col_calc:
-    st.markdown('<div class="module-card">', unsafe_allow_html=True)
-    st.subheader("🧮 3. КАЛЬКУЛЯТОРИ")
-    st.link_button("⚛️ 3.1. Доза опромінення", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
-    st.link_button("🕒 3.2. Час перебування", "https://sergsh1125-dotcom.github.io/calculator-time/")
-    st.link_button("⚗️ 3.3. Токсичні дози", "https://sergsh1125-dotcom.github.io/toxicdoze/")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# --- МОДУЛЬ 4: ДОВІДКА ---
-st.markdown('<div class="module-card">', unsafe_allow_html=True)
-st.subheader("📚 4. ДОВІДКОВА ІНФОРМАЦІЯ")
-t1, t2, t3 = st.tabs(["☁️ МЕТЕО", "📄 ІНСТРУКЦІЇ", "🧴 СПЕЦОБРОБКА"])
-
-with t1:
-    st.link_button("🌍 Гідрометцентр України", "https://www.meteo.gov.ua/")
-
-with t2:
-    st.write("Документація та технічні описи приладів.")
-    st.button("📥 Завантажити архів інструкцій")
-
-with t3:
-    st.write("📋 Таблиця розчинів (дані з GitHub)")
-    # Посилання на ваш CSV файл
-    csv_url = "https://raw.githubusercontent.com/sergsh1125-dotcom/YOUR_REPO/main/solutions.csv"
-    try:
-        df = pd.read_csv(csv_url)
-        st.dataframe(df, use_container_width=True, hide_index=True)
-    except:
-        st.info("Очікується завантаження solutions.csv...")
-st.markdown('</div>', unsafe_allow_html=True)
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("🆔 **Підрозділ:** РХБ захисту")
-st.sidebar.markdown("🛰️ **Статус:** Онлайн")
+# Кнопка виходу в сайдбарі
+if st.sidebar.button("Завершити сесію"):
+    st.session_state["password_correct"] = False
+    st.rerun()
