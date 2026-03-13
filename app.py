@@ -48,50 +48,63 @@ def check_password():
 if not check_password():
     st.stop()
 
-# --- 3. СТИЛІЗАЦІЯ ІНТЕРФЕЙСУ (ЗБІЛЬШЕНО) ---
+# --- СТИЛІЗАЦІЯ ІНТЕРФЕЙСУ (МАКСИМАЛЬНИЙ АКЦЕНТ) ---
 st.markdown("""
     <style>
     #MainMenu, footer, header {visibility: hidden;}
     .stApp {background-color: #0e1117; color: #e0e0e0;}
     
-    /* Назва порталу - ЗБІЛЬШЕНО У 3 РАЗИ */
+    /* ГІГАНТСЬКА НАЗВА ПОРТАЛУ */
     .main-title {
-        color: #ffcc00; text-align: center; 
-        font-size: 120px; /* Гігантський шрифт */
-        font-weight: 900; 
-        margin-top: -60px; margin-bottom: 0px;
-        text-transform: uppercase; line-height: 1;
-        letter-spacing: -2px;
-    }
-    .sub-title {
-        color: #ffcc00; text-align: center; 
-        font-size: 48px; font-weight: 500;
-        margin-bottom: 40px;
-    }
-    
-    /* Модулі - Більші та Жовті */
-    .module-header {
-        color: #ffcc00 !important; border-bottom: 3px solid #ffcc00; 
-        margin-top: 30px; margin-bottom: 20px; 
-        font-weight: bold; font-size: 28px; /* Збільшено */
-        text-transform: uppercase;
+        color: #ffcc00 !important; 
+        text-align: center !important; 
+        font-size: 100px !important; /* Гігантський розмір */
+        font-weight: 900 !important; 
+        line-height: 0.9 !important;
+        margin-top: -80px !important;
+        margin-bottom: 5px !important;
+        text-transform: uppercase !important;
+        font-family: 'Arial Black', Gadget, sans-serif !important;
+        text-shadow: 3px 3px 10px rgba(0,0,0,0.5) !important;
     }
 
-    /* Кнопки - Більші */
-    div.stButton > button, a.stLinkButton {
-        background-color: #1b1e23 !important; color: #ffffff !important;
-        border: 1px solid #3d444d !important; border-radius: 6px !important;
-        padding: 15px !important; width: 100% !important; 
-        text-align: left !important; font-size: 18px !important; 
-        font-weight: 500 !important; margin-bottom: 10px !important;
+    /* ПІДЗАГОЛОВОК */
+    .sub-title {
+        color: #ffcc00 !important; 
+        text-align: center !important; 
+        font-size: 45px !important; 
+        font-weight: 700 !important;
+        margin-bottom: 40px !important;
+        letter-spacing: 2px !important;
     }
     
-    div.stButton > button:hover, a.stLinkButton:hover {
-        border-color: #ffcc00 !important; color: #ffcc00 !important;
-        background-color: #262a33 !important;
+    /* НАЗВИ МОДУЛІВ */
+    .module-header {
+        color: #ffcc00 !important; 
+        border-bottom: 3px solid #ffcc00 !important; 
+        margin-top: 35px !important; 
+        margin-bottom: 15px !important; 
+        font-weight: 900 !important; 
+        font-size: 26px !important; 
+        text-transform: uppercase !important;
+    }
+
+    /* СТИЛЬ КНОПОК */
+    div.stButton > button, a.stLinkButton {
+        background-color: #1b1e23 !important; 
+        color: #ffffff !important;
+        border: 2px solid #3d444d !important; 
+        border-radius: 8px !important;
+        padding: 15px !important; 
+        font-weight: bold !important;
+        font-size: 18px !important;
     }
     </style>
 """, unsafe_allow_html=True)
+
+# Самі надписи
+st.markdown('<h1 class="main-title">ПЛАТФОРМА ПІДТРИМКИ РХБ ЗАХИСТУ</h1>', unsafe_allow_html=True)
+st.markdown('<h2 class="sub-title">ДСНС - ОФІС CBRN</h2>', unsafe_allow_html=True)
 
 # --- 4. ШАПКА ---
 st.markdown('<p class="main-title">ПЛАТФОРМА ПІДТРИМКИ РХБ ЗАХИСТУ</p>', unsafe_allow_html=True)
