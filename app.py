@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. СТИЛІЗАЦІЯ (КОЛЬОРИ ТА ШРИФТИ) ---
+# --- 2. СТИЛІЗАЦІЯ (ВКЛЮЧАЮЧИ ЖОВТИЙ EXPANDER) ---
 st.markdown("""
     <style>
     .block-container {
@@ -23,7 +23,7 @@ st.markdown("""
     #MainMenu, footer, header {visibility: hidden;}
     .stApp {background-color: #0e1117; color: #e0e0e0;}
     
-    /* НАЗВА ПОРТАЛУ (23px) */
+    /* НАЗВА ПОРТАЛУ */
     .main-title {
         color: #ffcc00 !important; 
         text-align: center !important; 
@@ -34,7 +34,7 @@ st.markdown("""
         text-transform: uppercase !important;
     }
     
-    /* НАЗВИ МОДУЛІВ (14px) */
+    /* НАЗВИ МОДУЛІВ */
     .module-header {
         color: #ffcc00 !important; 
         border-bottom: 1px solid #ffcc00 !important; 
@@ -45,18 +45,28 @@ st.markdown("""
         text-transform: uppercase !important;
     }
 
-    /* КНОПКИ (Жовті, 12px) */
-    div.stButton > button, a.stLinkButton {
+    /* ЖОВТІ КНОПКИ ТА СТИЛЬ ЕКСПАНДЕРА */
+    div.stButton > button, a.stLinkButton, .stExpander {
         background-color: #ffcc00 !important; 
         color: #000000 !important; 
         border: none !important; 
         border-radius: 4px !important;
+        margin-bottom: 5px !important;
+    }
+
+    /* Окремий стиль для тексту всередині жовтого експандера */
+    .stExpander summary p {
+        color: #000000 !important;
+        font-weight: bold !important;
+        font-size: 12px !important;
+    }
+
+    div.stButton > button, a.stLinkButton {
         padding: 8px 12px !important; 
         width: 100% !important; 
         text-align: left !important; 
         font-size: 12px !important; 
         font-weight: bold !important;
-        margin-bottom: 5px !important;
         display: block !important;
     }
     
@@ -64,10 +74,9 @@ st.markdown("""
         background-color: #e6b800 !important; 
     }
 
-    .map-container {
-        border: 1px solid #3d444d;
-        border-radius: 8px;
-        overflow: hidden;
+    iframe {
+        border: 1px solid #3d444d !important;
+        border-radius: 8px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -81,7 +90,6 @@ col_left, col_center, col_right = st.columns([1.2, 4.6, 1.2])
 with col_left:
     st.markdown('<p class="module-header">МОДУЛЬ 1. РХБ ОБСТАНОВКА</p>', unsafe_allow_html=True)
     st.link_button("1.1. Карта радіаційного моніторингу (SaveEcoBot)", "https://www.saveecobot.com/radiation-maps")
-    # НОВА КНОПКА 1.2
     st.link_button("1.2. Карта радіаційного моніторингу країн ЄС", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
     st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
     st.link_button("1.4. Карта фактичної радіаційної обстановки", "https://sergsh1125-dotcom-radiation-situation-app-vlg9fu.streamlit.app/")
@@ -134,8 +142,10 @@ with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКОВА ІНФОРМАЦІЯ</p>', unsafe_allow_html=True)
     st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
     
+    # 4.2. МЕТОДИЧНІ МАТЕРІАЛИ (ЖОВТЕ ПОЛЕ)
     with st.expander("📄 4.2. Методичні матеріали"):
-        st.link_button("📜 Сайт ДСНС України", "https://dsns.gov.ua/")
+        # Оновлена назва та пряме посилання на базу документів РХБ
+        st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.4")
+st.sidebar.caption("ОФІС CBRN v3.5")
