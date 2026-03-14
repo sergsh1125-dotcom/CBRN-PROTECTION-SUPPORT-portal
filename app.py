@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. СТИЛІЗАЦІЯ (ВКЛЮЧАЮЧИ ЖОВТИЙ EXPANDER) ---
+# --- 2. СТИЛІЗАЦІЯ (УСІ ПОЛЯ ЖОВТІ) ---
 st.markdown("""
     <style>
     .block-container {
@@ -45,7 +45,7 @@ st.markdown("""
         text-transform: uppercase !important;
     }
 
-    /* ЖОВТІ КНОПКИ ТА СТИЛЬ ЕКСПАНДЕРА */
+    /* УСІ КНОПКИ ТА ПОЛЯ EXPANDER - ЖОВТІ */
     div.stButton > button, a.stLinkButton, .stExpander {
         background-color: #ffcc00 !important; 
         color: #000000 !important; 
@@ -54,13 +54,28 @@ st.markdown("""
         margin-bottom: 5px !important;
     }
 
-    /* Окремий стиль для тексту всередині жовтого експандера */
+    /* Стилізація заголовка експандера (поля 4.2) */
+    .stExpander {
+        border: none !important;
+    }
+    .stExpander summary {
+        background-color: #ffcc00 !important;
+        border-radius: 4px !important;
+        padding: 5px 10px !important;
+    }
     .stExpander summary p {
         color: #000000 !important;
         font-weight: bold !important;
         font-size: 12px !important;
+        margin: 0 !important;
+    }
+    
+    /* Стилізація іконки стрілочки в експандері */
+    .stExpander svg {
+        fill: #000000 !important;
     }
 
+    /* Загальні налаштування кнопок */
     div.stButton > button, a.stLinkButton {
         padding: 8px 12px !important; 
         width: 100% !important; 
@@ -68,6 +83,7 @@ st.markdown("""
         font-size: 12px !important; 
         font-weight: bold !important;
         display: block !important;
+        line-height: 1.2 !important;
     }
     
     div.stButton > button:hover, a.stLinkButton:hover {
@@ -102,7 +118,7 @@ with col_left:
     st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
 with col_center:
-    # КАРТА З ФУНКЦІЄЮ КОПІЮВАННЯ КООРДИНАТ
+    # КАРТА З КОПІЮВАННЯМ КООРДИНАТ
     map_html = """
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -112,21 +128,11 @@ with col_center:
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
-
         var popup = L.popup();
-
         function onMapClick(e) {
             var coords = e.latlng.lat.toFixed(6) + ", " + e.latlng.lng.toFixed(6);
             navigator.clipboard.writeText(coords).then(function() {
-                popup
-                    .setLatLng(e.latlng)
-                    .setContent("Координати скопійовано: <br>" + coords)
-                    .openOn(map);
-            }, function(err) {
-                popup
-                    .setLatLng(e.latlng)
-                    .setContent("Координати: " + coords)
-                    .openOn(map);
+                popup.setLatLng(e.latlng).setContent("Координати скопійовано: <br>" + coords).openOn(map);
             });
         }
         map.on('click', onMapClick);
@@ -142,10 +148,8 @@ with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКОВА ІНФОРМАЦІЯ</p>', unsafe_allow_html=True)
     st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
     
-    # 4.2. МЕТОДИЧНІ МАТЕРІАЛИ (ЖОВТЕ ПОЛЕ)
     with st.expander("📄 4.2. Методичні матеріали"):
-        # Оновлена назва та пряме посилання на базу документів РХБ
         st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.5")
+st.sidebar.caption("ОФІС CBRN v3.6")
