@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. СТИЛІЗАЦІЯ (УСІ ПОЛЯ ЖОВТІ) ---
+# --- 2. СТИЛІЗАЦІЯ (МАКСИМАЛЬНИЙ ЖОВТИЙ ФОН) ---
 st.markdown("""
     <style>
     .block-container {
@@ -45,49 +45,44 @@ st.markdown("""
         text-transform: uppercase !important;
     }
 
-    /* УСІ КНОПКИ ТА ПОЛЯ EXPANDER - ЖОВТІ */
-    div.stButton > button, a.stLinkButton, .stExpander {
-        background-color: #ffcc00 !important; 
-        color: #000000 !important; 
-        border: none !important; 
-        border-radius: 4px !important;
-        margin-bottom: 5px !important;
-    }
-
-    /* Стилізація заголовка експандера (поля 4.2) */
-    .stExpander {
-        border: none !important;
-    }
-    .stExpander summary {
+    /* ФАРБУВАННЯ ВСІХ КНОПОК ТА ПІДМОДУЛІВ */
+    /* Цей блок знаходить стандартні контейнери Streamlit і робить їх жовтими */
+    div[data-testid="stButton"] button, 
+    div[data-testid="stLinkButton"] a,
+    .stDownloadButton button {
         background-color: #ffcc00 !important;
-        border-radius: 4px !important;
-        padding: 5px 10px !important;
-    }
-    .stExpander summary p {
         color: #000000 !important;
+        border: none !important;
+        width: 100% !important;
         font-weight: bold !important;
         font-size: 12px !important;
-        margin: 0 !important;
+        border-radius: 4px !important;
+        padding: 8px 12px !important;
+        display: block !important;
+        text-decoration: none !important;
+    }
+
+    /* СТИЛІЗАЦІЯ ЕКСПАНДЕРА (ПОЛЕ 4.2) */
+    .stExpander {
+        background-color: #ffcc00 !important;
+        border: none !important;
+        border-radius: 4px !important;
     }
     
-    /* Стилізація іконки стрілочки в експандері */
-    .stExpander svg {
+    .stExpander summary {
+        color: #000000 !important;
+        font-weight: bold !important;
+    }
+
+    .stExpander summary svg {
         fill: #000000 !important;
     }
 
-    /* Загальні налаштування кнопок */
-    div.stButton > button, a.stLinkButton {
-        padding: 8px 12px !important; 
-        width: 100% !important; 
-        text-align: left !important; 
-        font-size: 12px !important; 
-        font-weight: bold !important;
-        display: block !important;
-        line-height: 1.2 !important;
-    }
-    
-    div.stButton > button:hover, a.stLinkButton:hover {
-        background-color: #e6b800 !important; 
+    /* Колір при наведенні */
+    div[data-testid="stButton"] button:hover, 
+    div[data-testid="stLinkButton"] a:hover {
+        background-color: #e6b800 !important;
+        color: #000000 !important;
     }
 
     iframe {
@@ -111,14 +106,13 @@ with col_left:
     st.link_button("1.4. Карта фактичної радіаційної обстановки", "https://sergsh1125-dotcom-radiation-situation-app-vlg9fu.streamlit.app/")
     st.link_button("1.5. Карта фактичної хімічної обстановки", "https://sergsh1125-dotcom-chemical-map-app-rhopcd.streamlit.app/")
     
-    st.info("💡 Клікніть на карті по центру, щоб скопіювати координати точки.")
+    st.info("💡 Клікніть на карті, щоб скопіювати координати.")
     
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
     st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
     st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
 with col_center:
-    # КАРТА З КОПІЮВАННЯМ КООРДИНАТ
     map_html = """
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -152,4 +146,4 @@ with col_right:
         st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.6")
+st.sidebar.caption("ОФІС CBRN v3.7")
