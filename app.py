@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. СТИЛІЗАЦІЯ (МАКСИМАЛЬНИЙ ЖОВТИЙ ФОН) ---
+# --- 2. СТИЛІЗАЦІЯ (ЖОВТИЙ ФОН ТА ЧОРНИЙ ТЕКСТ) ---
 st.markdown("""
     <style>
     .block-container {
@@ -45,11 +45,9 @@ st.markdown("""
         text-transform: uppercase !important;
     }
 
-    /* ФАРБУВАННЯ ВСІХ КНОПОК ТА ПІДМОДУЛІВ */
-    /* Цей блок знаходить стандартні контейнери Streamlit і робить їх жовтими */
+    /* ФАРБУВАННЯ КНОПОК ТА ПІДМОДУЛІВ */
     div[data-testid="stButton"] button, 
-    div[data-testid="stLinkButton"] a,
-    .stDownloadButton button {
+    div[data-testid="stLinkButton"] a {
         background-color: #ffcc00 !important;
         color: #000000 !important;
         border: none !important;
@@ -60,6 +58,7 @@ st.markdown("""
         padding: 8px 12px !important;
         display: block !important;
         text-decoration: none !important;
+        line-height: 1.2 !important;
     }
 
     /* СТИЛІЗАЦІЯ ЕКСПАНДЕРА (ПОЛЕ 4.2) */
@@ -78,11 +77,9 @@ st.markdown("""
         fill: #000000 !important;
     }
 
-    /* Колір при наведенні */
     div[data-testid="stButton"] button:hover, 
     div[data-testid="stLinkButton"] a:hover {
         background-color: #e6b800 !important;
-        color: #000000 !important;
     }
 
     iframe {
@@ -113,6 +110,7 @@ with col_left:
     st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
 with col_center:
+    # КАРТА З КОПІЮВАННЯМ КООРДИНАТ
     map_html = """
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -137,7 +135,10 @@ with col_center:
 with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
     st.link_button("3.1. Калькулятор дози опромінення при ядерному вибуху", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
-    st.link_button("3.2. Калькулятор розрахунку часу перебування у зоні радіоактивного забруднення", "https://sergsh1125-dotcom.github.io/calculator-time/")
+    # НОВИЙ ПІДМОДУЛЬ 3.2
+    st.link_button("3.2. Калькулятор дози опромінення при аварії на АЕС", "https://sergsh1125-dotcom.github.io/radiation-doza/")
+    # ОНОВЛЕНА НУМЕРАЦІЯ
+    st.link_button("3.3. Калькулятор розрахунку часу перебування у зоні радіоактивного забруднення", "https://sergsh1125-dotcom.github.io/calculator-time/")
     
     st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКОВА ІНФОРМАЦІЯ</p>', unsafe_allow_html=True)
     st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
@@ -146,4 +147,4 @@ with col_right:
         st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.7")
+st.sidebar.caption("ОФІС CBRN v3.8")
