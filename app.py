@@ -100,10 +100,10 @@ with col_left:
     st.link_button("1.1. Карта радіаційного моніторингу (SaveEcoBot)", "https://www.saveecobot.com/radiation-maps")
     st.link_button("1.2. Карта радіаційного моніторингу країн ЄС", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
     st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
-    st.link_button("1.4. Карта фактичної радіаційної обстановки", "https://sergsh1125-dotcom-radiation-situation-app-vlg9fu.streamlit.app/")
-    st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chemical-map-dcghcctrzekiqrfx4autyh.streamlit.app/")
+    st.link_button("1.4. Карта фактичної радіаційної обстановки", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
+    st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chatgpt.com/c/69b91fbc-cb10-832b-adbd-584e8c968d94")
     
-    st.info("💡 Клікніть на карті, щоб скопіювати координати.")
+    st.info("💡 Клікніть на карту фактичної радіаційної або хімічної обстановки, щоб скопіювати координати.")
     
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
     st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
