@@ -101,7 +101,7 @@ with col_left:
     st.link_button("1.2. Карта радіаційного моніторингу країн ЄС", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
     st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
     st.link_button("1.4. Карта фактичної радіаційної обстановки", "https://sergsh1125-dotcom-radiation-situation-app-vlg9fu.streamlit.app/")
-    st.link_button("1.5. Карта фактичної хімічної обстановки", "https://sergsh1125-dotcom-chemical-map-app-rhopcd.streamlit.app/")
+    st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chemical-map-dcghcctrzekiqrfx4autyh.streamlit.app/")
     
     st.info("💡 Клікніть на карті, щоб скопіювати координати.")
     
