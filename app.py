@@ -1,10 +1,15 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# --- 1. Налаштування сторінки ---
-st.set_page_config(page_title="ОФІС CBRN", page_icon="☢️", layout="wide", initial_sidebar_state="collapsed")
+# --- 1. НАЛАШТУВАННЯ СТОРІНКИ ---
+st.set_page_config(
+    page_title="ОФІС CBRN",
+    page_icon="☢️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-# --- 2. Стилі ---
+# --- 2. СТИЛІЗАЦІЯ ---
 st.markdown("""
 <style>
 .block-container {padding:1rem !important; max-width:100% !important;}
@@ -20,10 +25,10 @@ div[data-testid="stButton"] button:hover, div[data-testid="stLinkButton"] a:hove
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. Заголовок ---
+# --- 3. ЗАГОЛОВОК ---
 st.markdown('<p class="main-title">Платформа підтримки прийняття рішення щодо реагування на РХБ інциденти</p>', unsafe_allow_html=True)
 
-# --- 4. Робочий простір ---
+# --- 4. РОБОЧИЙ ПРОСТІР ---
 col_left, col_center, col_right = st.columns([1.2, 4.6, 1.2])
 
 with col_left:
@@ -35,76 +40,34 @@ with col_left:
     st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chemical-map-6refroql3kghrhuh7tzdma.streamlit.app/")
     st.info("💡 На картах підмодулів 1.4; 1.5 координати точки вимірювання завантажуються кліком мишки.")
 
+    st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
+    st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
+    st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
+
 with col_center:
-    # HTML-код карти
+    # КАРТА
     map_html = """
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
 <div id="map" style="height:750px; width:100%; border-radius:8px;"></div>
-
 <script>
-window.addEventListener("DOMContentLoaded", () => {
-    var map = L.map('map',{attributionControl:false}).setView([48.3794,31.1656],6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    var drawnItems = new L.FeatureGroup();
-    map.addLayer(drawnItems);
+var map = L.map('map',{attributionControl:false}).setView([48.3794,31.1656],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    var drawControl = new L.Control.Draw({
-        draw:{polygon:true, rectangle:true, circle:true, polyline:true, marker:true},
-        edit:{featureGroup:drawnItems}
-    });
-    map.addControl(drawControl);
+var drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
 
-    map.on(L.Draw.Event.CREATED, function(e){
-        var layer=e.layer;
-        var type=e.layerType;
-
-        if(type==='marker'){
-            var blueIcon=L.icon({iconUrl:"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",iconSize:[25,41],iconAnchor:[12,41]});
-            layer.setIcon(blueIcon);
-        } else if(layer instanceof L.Circle && layer.options.radius>=50000){
-            layer.setStyle({color:'black', fillColor:'yellow', fillOpacity:0.4, weight:2});
-        } else if(layer instanceof L.Circle){
-            layer.setStyle({color:'black', fillColor:'orange', fillOpacity:0.8, weight:2});
-        } else {
-            layer.setStyle({color:'black', fillColor:'yellow', fillOpacity:0.4, weight:2});
-        }
-        drawnItems.addLayer(layer);
-    });
-
-    window.drawnItems = drawnItems; // Для взаємодії з Streamlit
-    window.map = map;
+map.on('click', function(e){
+    // координати тепер показуються лише через маркер
 });
+
+// Приклад стилів для фігур
+function addCircle(lat,lng,radius,colorFill){
+    L.circle([lat,lng],{radius:radius, color:'black', fillColor:colorFill, fillOpacity:0.6, weight:2}).addTo(drawnItems);
+}
 </script>
 """
     components.html(map_html, height=760)
-
-    # --- Кнопки під картою ---
-    text_input = st.text_input("Текст для карти:")
-    if st.button("Додати текст на карту"):
-        if text_input.strip() != "":
-            st.components.v1.html(f"""
-            <script>
-                var marker=L.marker(window.map.getCenter(),{{
-                    icon:L.divIcon({{className:'text-label', html:"{text_input}", iconSize:[150,20]}})
-                }}).addTo(window.drawnItems);
-            </script>
-            """, height=0)
-
-    if st.button("Завантажити скріншот карти"):
-        st.components.v1.html("""
-        <script>
-        html2canvas(document.getElementById('map')).then(function(canvas){
-            var link=document.createElement('a');
-            link.download='map_snapshot.png';
-            link.href=canvas.toDataURL(); link.click();
-        });
-        </script>
-        """, height=0)
 
 with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
@@ -118,4 +81,4 @@ with col_right:
         st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.12")
+st.sidebar.caption("ОФІС CBRN v3.11")
