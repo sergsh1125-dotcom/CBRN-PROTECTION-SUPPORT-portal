@@ -112,24 +112,107 @@ with col_left:
 with col_center:
     # КАРТА З КОПІЮВАННЯМ КООРДИНАТ
     map_html = """
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <div id="map" style="height: 750px; border-radius: 8px;"></div>
-    <script>
-        var map = L.map('map').setView([48.3794, 31.1656], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-        var popup = L.popup();
-        function onMapClick(e) {
-            var coords = e.latlng.lat.toFixed(6) + ", " + e.latlng.lng.toFixed(6);
-            navigator.clipboard.writeText(coords).then(function() {
-                popup.setLatLng(e.latlng).setContent("Координати скопійовано: <br>" + coords).openOn(map);
-            });
-        }
-        map.on('click', onMapClick);
-    </script>
-    """
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+<div id="map" style="height: 750px; border-radius: 8px;"></div>
+
+<script>
+var map = L.map('map').setView([48.3794, 31.1656], 6);
+
+// OSM шар
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+// --- ГРУПА ДЛЯ ФІГУР ---
+var drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
+
+// --- ПАНЕЛЬ МАЛЮВАННЯ ---
+var drawControl = new L.Control.Draw({
+    edit: {
+        featureGroup: drawnItems
+    },
+    draw: {
+        polygon: true,
+        rectangle: true,
+        circle: true,
+        polyline: true,
+        marker: true
+    }
+});
+map.addControl(drawControl);
+
+// --- ДОДАВАННЯ ФІГУР ---
+map.on(L.Draw.Event.CREATED, function (e) {
+    var layer = e.layer;
+
+    // стиль (можеш змінювати під РХБ)
+    if (e.layerType === 'circle' || e.layerType === 'polygon' || e.layerType === 'rectangle') {
+        layer.setStyle({
+            color: 'red',
+            fillColor: 'red',
+            fillOpacity: 0.3
+        });
+    }
+
+    drawnItems.addLayer(layer);
+});
+
+// --- КЛІК КООРДИНАТ ---
+var popup = L.popup();
+
+function onMapClick(e) {
+    var coords = e.latlng.lat.toFixed(6) + ", " + e.latlng.lng.toFixed(6);
+
+    navigator.clipboard.writeText(coords);
+
+    popup.setLatLng(e.latlng)
+        .setContent("Координати: <br>" + coords)
+        .openOn(map);
+}
+map.on('click', onMapClick);
+
+// --- ДОДАВАННЯ ТЕКСТУ (ПКМ) ---
+map.on('contextmenu', function(e) {
+    var text = prompt("Введіть текст:");
+    if (text) {
+        var icon = L.divIcon({
+            className: 'text-label',
+            html: '<div style="background:white; padding:4px; border-radius:4px;">'+text+'</div>'
+        });
+
+        L.marker(e.latlng, {icon: icon}).addTo(map);
+    }
+});
+
+// --- ЛЕГЕНДА ---
+var legend = L.control({position: 'bottomleft'});
+
+legend.onAdd = function () {
+    var div = L.DomUtil.create('div', 'info legend');
+    div.style.background = "white";
+    div.style.padding = "10px";
+    div.style.border = "2px solid gray";
+
+    div.innerHTML += "<b>Легенда</b><br>";
+    div.innerHTML += "<i style='background:red;width:12px;height:12px;display:inline-block'></i> Зона зараження<br>";
+    div.innerHTML += "<i style='background:orange;width:12px;height:12px;display:inline-block'></i> Потенційна зона<br>";
+    div.innerHTML += "<i style='background:green;width:12px;height:12px;display:inline-block'></i> Безпечно<br><br>";
+    div.innerHTML += "🌬 Вітер: -- м/с<br>";
+    div.innerHTML += "→ Напрямок: --";
+
+    return div;
+};
+
+legend.addTo(map);
+
+</script>
+"""
     components.html(map_html, height=760)
 
 with col_right:
