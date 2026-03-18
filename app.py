@@ -34,7 +34,7 @@ st.markdown("""
     margin-top:10px !important;
     margin-bottom:8px !important;
     font-weight:bold !important;
-    font-size:24px !important;
+    font-size:23px !important;
     text-transform:uppercase !important;
 }
 
@@ -165,4 +165,4 @@ with col_right:
         st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.9")
+st.sidebar.caption("ОФІС CBRN v3.10")
