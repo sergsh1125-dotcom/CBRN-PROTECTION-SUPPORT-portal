@@ -214,7 +214,7 @@ legend.addTo(map);
 
 </script>
 """
-components.html(map_html, height=760)
+    components.html(map_html, height=760)
 
 with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
