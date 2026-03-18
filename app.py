@@ -36,15 +36,12 @@ with col_center:
 <script>
 window.onload = function(){
 
-    // --- Створення карти ---
     var map = L.map('map').setView([48.3794,31.1656],6);
 
-    // --- OSM ---
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
         attribution:'© OpenStreetMap contributors'
     }).addTo(map);
 
-    // --- Група для об'єктів ---
     var drawnItems = new L.FeatureGroup().addTo(map);
     var layersMap = {};
 
@@ -63,7 +60,6 @@ window.onload = function(){
 
     // --- Режим тексту ---
     var textMode = false;
-
     var textControl = L.control({position:'topleft'});
     textControl.onAdd = function(){
         var div = L.DomUtil.create('div');
@@ -95,24 +91,17 @@ window.onload = function(){
     });
     map.addControl(drawControl);
 
-    // --- Зміна заливки ---
-    function setChemical(id){
-        var l = layersMap[id]; if(!l) return;
-        l.setStyle({color:"black",fillColor:"yellow",fillOpacity:0.4});
-    }
-    function setRadiation(id){
-        var l = layersMap[id]; if(!l) return;
-        l.setStyle({color:"black",fillColor:"#ff6666",fillOpacity:0.4});
-    }
+    // --- Стиль об’єктів ---
+    function setChemical(id){ var l=layersMap[id]; if(l) l.setStyle({color:"black",fillColor:"yellow",fillOpacity:0.4}); }
+    function setRadiation(id){ var l=layersMap[id]; if(l) l.setStyle({color:"black",fillColor:"#ff6666",fillOpacity:0.4}); }
 
-    // --- Подія створення об'єкта ---
     map.on(L.Draw.Event.CREATED,function(e){
         var layer = e.layer;
         var type = e.layerType;
         var id = L.stamp(layer);
         layersMap[id] = layer;
 
-        if(type === "marker"){
+        if(type==="marker"){
             var blueIcon = L.icon({
                 iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
                 shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -121,7 +110,7 @@ window.onload = function(){
             });
             layer.setIcon(blueIcon);
             layer.on('click',function(){
-                var c = layer.getLatLng();
+                var c=layer.getLatLng();
                 layer.bindPopup("Координати:<br>"+c.lat.toFixed(6)+", "+c.lng.toFixed(6)).openPopup();
             });
         } else {
@@ -134,7 +123,7 @@ window.onload = function(){
         drawnItems.addLayer(layer);
     });
 
-    // --- Додавання тексту ---
+    // --- Текст на карті ---
     map.on('click',function(e){
         if(textMode){
             var t = prompt("Введіть текст:");
@@ -148,7 +137,7 @@ window.onload = function(){
     // --- Легенда ---
     var legend = L.control({position:'bottomleft'});
     legend.onAdd=function(){
-        var d = L.DomUtil.create('div');
+        var d=L.DomUtil.create('div');
         d.style.background='white';
         d.style.padding='10px';
         d.innerHTML="<b>Легенда</b><br><br>";
@@ -158,7 +147,7 @@ window.onload = function(){
     };
     legend.addTo(map);
 
-    // --- Збереження карти у HTML ---
+    // --- Збереження карти ---
     window.saveMap = function(){
         var data = drawnItems.toGeoJSON();
         var html = `
