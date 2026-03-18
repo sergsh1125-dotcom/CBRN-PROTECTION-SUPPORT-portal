@@ -80,13 +80,6 @@ with col_left:
     st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
     st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
-# --- Кнопки Streamlit над картою ---
-col_btn1, col_btn2 = st.columns([1,1])
-with col_btn1:
-    add_text = st.button("Додати текст на карту")
-with col_btn2:
-    save_map = st.button("Завантажити скріншот карти")
-
 with col_center:
     map_html = """
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -99,7 +92,7 @@ with col_center:
 
 <script>
 window.addEventListener("DOMContentLoaded", () => {
-    var map = L.map('map', {attributionControl:false}).setView([48.3794,31.1656],6);
+    var map = L.map('map',{attributionControl:false}).setView([48.3794,31.1656],6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
     var drawnItems = new L.FeatureGroup();
@@ -126,31 +119,47 @@ window.addEventListener("DOMContentLoaded", () => {
             layer.setStyle({color:'black', fillColor:'yellow', fillOpacity:0.4, weight:2});
         } else if(layer instanceof L.Circle){
             layer.setStyle({color:'black', fillColor:'orange', fillOpacity:0.8, weight:2});
-        } else {layer.setStyle({color:'black', fillColor:'yellow', fillOpacity:0.4, weight:2});}
+        } else {
+            layer.setStyle({color:'black', fillColor:'yellow', fillOpacity:0.4, weight:2});
+        }
 
         drawnItems.addLayer(layer);
     });
 
-    window.addText = function(){
-        L.marker(map.getCenter(), {icon:L.divIcon({className:'text-label', html:'Текст на карті', iconSize:[100,20]})}).addTo(drawnItems);
-    }
+    // --- Кнопки на карті ---
+    var addTextControl = L.Control.extend({
+        options:{position:'topright'},
+        onAdd:function(){ 
+            var container=L.DomUtil.create('div','leaflet-bar leaflet-control leaflet-control-custom');
+            container.innerHTML='<button style="background:#ffcc00;padding:4px 8px;border:none;font-weight:bold;cursor:pointer">Додати текст</button>';
+            container.onclick=function(){ 
+                L.marker(map.getCenter(),{icon:L.divIcon({className:'text-label', html:'Текст на карті', iconSize:[100,20]})}).addTo(drawnItems);
+            }
+            return container;
+        }
+    });
+    map.addControl(new addTextControl());
 
-    window.saveMap = function(){
-        html2canvas(document.getElementById('map')).then(function(canvas){
-            var link=document.createElement('a'); link.download='map_snapshot.png';
-            link.href=canvas.toDataURL(); link.click();
-        });
-    }
+    var saveMapControl = L.Control.extend({
+        options:{position:'topright'},
+        onAdd:function(){
+            var container=L.DomUtil.create('div','leaflet-bar leaflet-control leaflet-control-custom');
+            container.innerHTML='<button style="background:#ffcc00;padding:4px 8px;border:none;font-weight:bold;cursor:pointer">Завантажити карту</button>';
+            container.onclick=function(){
+                html2canvas(document.getElementById('map')).then(function(canvas){
+                    var link=document.createElement('a'); link.download='map_snapshot.png';
+                    link.href=canvas.toDataURL(); link.click();
+                });
+            }
+            return container;
+        }
+    });
+    map.addControl(new saveMapControl());
+
 });
 </script>
 """
     components.html(map_html, height=760)
-
-# --- Виклик JS-функцій ---
-if add_text:
-    components.html("<script>window.addText();</script>", height=0)
-if save_map:
-    components.html("<script>window.saveMap();</script>", height=0)
 
 with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
@@ -165,4 +174,4 @@ with col_right:
         st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.10")
+st.sidebar.caption("ОФІС CBRN v3.11")
