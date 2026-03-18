@@ -15,7 +15,7 @@ st.markdown("""
     .block-container {padding:1rem !important; max-width:100% !important;}
     #MainMenu, footer, header {visibility: hidden;}
     .stApp {background-color: #0e1117; color: #e0e0e0;}
-    .main-title {color:#ffcc00; text-align:center; font-size:23px; font-weight:bold; margin-top:-30px; margin-bottom:15px; text-transform:uppercase;}
+    .main-title {color:#ffcc00; text-align:center; font-size:45px; font-weight:bold; margin-top:-30px; margin-bottom:15px; text-transform:uppercase;}
     .module-header {color:#ffcc00; border-bottom:1px solid #ffcc00; margin-top:10px; margin-bottom:8px; font-weight:bold; font-size:14px; text-transform:uppercase;}
     div[data-testid="stButton"] button, div[data-testid="stLinkButton"] a {background-color:#ffcc00; color:#000; border:none; width:100%; font-weight:bold; font-size:12px; border-radius:4px; padding:8px 12px; display:block; text-decoration:none; line-height:1.2;}
     div[data-testid="stButton"] button:hover, div[data-testid="stLinkButton"] a:hover {background-color:#e6b800;}
@@ -39,8 +39,8 @@ with col_left:
     st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
     st.link_button("1.4. Карта фактичної радіаційної обстановки", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
     st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chemical-map-6refroql3kghrhuh7tzdma.streamlit.app/")
-    st.info("💡 Клікніть на карту фактичної радіаційної або хімічної обстановки, щоб скопіювати координати.")
-    
+    st.info("💡 Додавайте маркери на карту для позначок.")
+
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
     st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
     st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
@@ -49,7 +49,7 @@ with col_center:
     # --- КАРТА ПО ЦЕНТРУ ---
     map_html = """
     <div style="width:100%; display:flex; justify-content:center;">
-        <div id="map" style="height:750px; width:100%; max-width:900px; border-radius:8px;"></div>
+        <div id="map" style="height:750px; width:calc(100% - 6px); max-width:1000px; border-radius:8px;"></div>
     </div>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -64,7 +64,7 @@ with col_center:
     var drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
-    function setStyle(layer){layer.setStyle({color:'black',fillColor:'yellow',fillOpacity:0.4,weight:2});}
+    function setStyle(layer){layer.setStyle({color:'orange',fillColor:'orange',fillOpacity:0.4,weight:2});}
 
     var drawControl = new L.Control.Draw({
         draw:{polygon:true,rectangle:true,circle:true,polyline:true,marker:true},
@@ -87,32 +87,35 @@ with col_center:
                 var coords = layer.getLatLng().lat.toFixed(6)+", "+layer.getLatLng().lng.toFixed(6);
                 layer.bindPopup("Координати:<br>"+coords).openPopup();
             });
-        }else{setStyle(layer);}
+        } else if(type==="circle"){
+            setStyle(layer);
+        } else {
+            setStyle(layer);
+        }
         drawnItems.addLayer(layer);
     });
 
-    var popup = L.popup();
-    map.on('click',function(e){
-        var coords = e.latlng.lat.toFixed(6)+", "+e.latlng.lng.toFixed(6);
-        navigator.clipboard.writeText(coords);
-        popup.setLatLng(e.latlng).setContent("Координати скопійовано:<br>"+coords).openOn(map);
-    });
     </script>
     """
     components.html(map_html, height=760)
+
+    # --- КНОПКА ДОДАВАННЯ ТЕКСТУ ---
+    st.button("Додати текст на карту")
+
+    # --- КНОПКА ЗАВАНТАЖЕННЯ КАРТИ ---
+    st.download_button("Завантажити карту у HTML", map_html, file_name="map.html", mime="text/html")
 
 with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
     st.link_button("3.1. Калькулятор дози опромінення при ядерному вибуху", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
     st.link_button("3.2. Калькулятор дози опромінення при аварії на АЕС", "https://sergsh1125-dotcom.github.io/radiation-doza/")
     st.link_button("3.3. Калькулятор розрахунку часу перебування у зоні радіоактивного забруднення", "https://sergsh1125-dotcom.github.io/calculator-time/")
-    
+
     st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКОВА ІНФОРМАЦІЯ</p>', unsafe_allow_html=True)
     st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
-    
+
     with st.expander("📄 4.2. Методичні матеріали"):
         st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-# --- 5. БОКОВА ПАНЕЛЬ ---
-st.sidebar.caption("ОФІС CBRN v3.8")
+st.sidebar.caption("ОФІС CBRN v3.9")
