@@ -1,7 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# --- 1. НАЛАШТУВАННЯ СТОРІНКИ ---
 st.set_page_config(
     page_title="ОФІС CBRN",
     page_icon="☢️",
@@ -9,7 +8,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. СТИЛІЗАЦІЯ ---
 st.markdown("""
 <style>
 .block-container {padding:1rem !important; max-width:100% !important;}
@@ -25,11 +23,9 @@ div[data-testid="stButton"] button:hover, div[data-testid="stLinkButton"] a:hove
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. ЗАГОЛОВОК ---
 st.markdown('<p class="main-title">Платформа підтримки прийняття рішення щодо реагування на РХБ інциденти</p>', unsafe_allow_html=True)
 
-# --- 4. РОБОЧИЙ ПРОСТІР ---
-col_left, col_center, col_right = st.columns([1.2, 4.6, 1.2])
+col_left, col_center, col_right = st.columns([1.2,4.6,1.2])
 
 with col_left:
     st.markdown('<p class="module-header">МОДУЛЬ 1. РХБ ОБСТАНОВКА</p>', unsafe_allow_html=True)
@@ -45,11 +41,13 @@ with col_left:
     st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
 with col_center:
-    # КАРТА
     map_html = """
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 <div id="map" style="height:750px; width:100%; border-radius:8px;"></div>
+
 <script>
 var map = L.map('map',{attributionControl:false}).setView([48.3794,31.1656],6);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
@@ -57,14 +55,29 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
-map.on('click', function(e){
-    // координати тепер показуються лише через маркер
-});
-
-// Приклад стилів для фігур
-function addCircle(lat,lng,radius,colorFill){
-    L.circle([lat,lng],{radius:radius, color:'black', fillColor:colorFill, fillOpacity:0.6, weight:2}).addTo(drawnItems);
+// Функція стилів фігур
+function setStyle(layer){
+    if(layer instanceof L.Circle){
+        var radius = layer.getRadius();
+        layer.setStyle({color:'black', fillColor: radius>5000?'yellow':'orange', fillOpacity:0.6, weight:2});
+    } else {
+        layer.setStyle({color:'black', fillColor:'yellow', fillOpacity:0.6, weight:2});
+    }
 }
+
+// Інструменти малювання
+var drawControl = new L.Control.Draw({
+    draw:{polygon:true, rectangle:true, circle:true, polyline:true, marker:true},
+    edit:{featureGroup: drawnItems}
+});
+map.addControl(drawControl);
+
+// Обробка створення фігури
+map.on(L.Draw.Event.CREATED, function(e){
+    var layer = e.layer;
+    setStyle(layer);
+    drawnItems.addLayer(layer);
+});
 </script>
 """
     components.html(map_html, height=760)
@@ -81,4 +94,4 @@ with col_right:
         st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.11")
+st.sidebar.caption("ОФІС CBRN v3.12")
