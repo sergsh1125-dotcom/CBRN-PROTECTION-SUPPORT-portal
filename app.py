@@ -140,24 +140,89 @@ with col_left:
 with col_center:
     # КАРТА З КОПІЮВАННЯМ КООРДИНАТ
     map_html = """
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <div id="map" style="height: 750px; border-radius: 8px;"></div>
-    <script>
-        var map = L.map('map').setView([48.3794, 31.1656], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-        var popup = L.popup();
-        function onMapClick(e) {
-            var coords = e.latlng.lat.toFixed(6) + ", " + e.latlng.lng.toFixed(6);
-            navigator.clipboard.writeText(coords).then(function() {
-                popup.setLatLng(e.latlng).setContent("Координати скопійовано: <br>" + coords).openOn(map);
-            });
-        }
-        map.on('click', onMapClick);
-    </script>
-    """
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+<div id="map" style="height: 750px; border-radius: 8px;"></div>
+
+<script>
+var map = L.map('map').setView([48.3794, 31.1656], 6);
+
+// БАЗОВА КАРТА
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+// ШАР ДЛЯ ОБ'ЄКТІВ
+var drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
+
+// СТИЛЬ ФІГУР
+function setStyle(layer) {
+    layer.setStyle({
+        color: 'black',
+        fillColor: 'yellow',
+        fillOpacity: 0.4,
+        weight: 2
+    });
+}
+
+// ІНСТРУМЕНТИ МАЛЮВАННЯ
+var drawControl = new L.Control.Draw({
+    draw: {
+        polygon: true,
+        rectangle: true,
+        circle: true,
+        polyline: true,
+        marker: true
+    },
+    edit: {
+        featureGroup: drawnItems
+    }
+});
+map.addControl(drawControl);
+
+// ОБРОБКА СТВОРЕННЯ
+map.on(L.Draw.Event.CREATED, function (e) {
+    var layer = e.layer;
+    var type = e.layerType;
+
+    if (type === "marker") {
+        var blueIcon = L.icon({
+            iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+            shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41]
+        });
+
+        layer.setIcon(blueIcon);
+
+        layer.on('click', function() {
+            var coords = layer.getLatLng().lat.toFixed(6) + ", " + layer.getLatLng().lng.toFixed(6);
+            layer.bindPopup("Координати:<br>" + coords).openPopup();
+        });
+
+    } else {
+        setStyle(layer);
+    }
+
+    drawnItems.addLayer(layer);
+});
+
+// КЛІК ПО КАРТІ — КООРДИНАТИ
+var popup = L.popup();
+map.on('click', function(e) {
+    var coords = e.latlng.lat.toFixed(6) + ", " + e.latlng.lng.toFixed(6);
+    navigator.clipboard.writeText(coords);
+    popup.setLatLng(e.latlng)
+        .setContent("Координати скопійовано:<br>" + coords)
+        .openOn(map);
+});
+</script>
+"""
     components.html(map_html, height=760)
 
 with col_right:
