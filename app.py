@@ -13,10 +13,40 @@ st.markdown("""
 .block-container {padding:1rem !important; max-width:100% !important;}
 #MainMenu, footer, header {visibility:hidden;}
 .stApp {background-color:#0e1117; color:#e0e0e0;}
-.main-title {color:#ffcc00 !important; text-align:center !important; font-size:25px !important; font-weight:bold !important; margin-top:-30px !important; margin-bottom:15px !important; text-transform:uppercase !important;}
-.module-header {color:#ffcc00 !important; border-bottom:1px solid #ffcc00 !important; margin-top:10px !important; margin-bottom:8px !important; font-weight:bold !important; font-size:22px !important; text-transform:uppercase !important;}
-div[data-testid="stButton"] button, div[data-testid="stLinkButton"] a {background-color:#ffcc00 !important; color:#000 !important; border:none !important; width:100% !important; font-weight:bold !important; font-size:12px !important; border-radius:4px !important; padding:8px 12px !important; display:block !important; line-height:1.2 !important;}
-div[data-testid="stButton"] button:hover, div[data-testid="stLinkButton"] a:hover {background-color:#e6b800 !important;}
+
+.main-title {
+    color:#ffcc00 !important;
+    text-align:center !important;
+    font-size:25px !important;
+    font-weight:bold !important;
+    margin-top:-30px !important;
+    margin-bottom:15px !important;
+    text-transform:uppercase !important;
+}
+
+.module-header {
+    color:#ffcc00 !important;
+    border-bottom:1px solid #ffcc00 !important;
+    margin-top:10px !important;
+    margin-bottom:8px !important;
+    font-weight:bold !important;
+    font-size:22px !important;
+    text-transform:uppercase !important;
+}
+
+div[data-testid="stButton"] button,
+div[data-testid="stLinkButton"] a {
+    background-color:#ffcc00 !important;
+    color:#000 !important;
+    border:none !important;
+    width:100% !important;
+    font-weight:bold !important;
+    font-size:12px !important;
+    border-radius:4px !important;
+    padding:8px 12px !important;
+    display:block !important;
+    line-height:1.2 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -24,19 +54,30 @@ st.markdown('<p class="main-title">Платформа підтримки при�
 
 col_left, col_center, col_right = st.columns([1.2,4.6,1.2])
 
+# -------- LEFT --------
 with col_left:
     st.markdown('<p class="module-header">МОДУЛЬ 1. РХБ ОБСТАНОВКА</p>', unsafe_allow_html=True)
-    st.link_button("1.1. Карта радіаційного моніторингу (SaveEcoBot)", "https://www.saveecobot.com/radiation-maps")
-    st.link_button("1.2. Карта радіаційного моніторингу країн ЄС", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
-    st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
-    st.link_button("1.4. Карта фактичної радіаційної обстановки", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
-    st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chemical-map-6refroql3kghrhuh7tzdma.streamlit.app/")
-    st.info("💡 На картах підмодулів 1.4; 1.5 координати точки вимірювання завантажуються кліком мишки.")
 
+    st.link_button("1.1. SaveEcoBot", "https://www.saveecobot.com/radiation-maps")
+    st.link_button("1.2. ЄС карта", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
+    st.link_button("1.3. Прогноз хімії", "http://forecast.inf.ua/")
+    st.link_button("1.4. Радіаційна обстановка", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
+    st.link_button("1.5. Хімічна обстановка", "https://chemical-map-6refroql3kghrhuh7tzdma.streamlit.app/")
+
+    st.info("💡 На картах підмодулів 1.4; 1.5 координати визначаються кліком мишки")
+
+    # ✅ ПОВЕРНУЛИ МОДУЛЬ 2
+    st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
+    st.link_button("2.1. Аварійні картки", "https://sergsh1125-dotcom.github.io/emergency-cards/")
+    st.link_button("2.2. Токсодози", "https://sergsh1125-dotcom.github.io/toxicdoze/")
+
+# -------- CENTER --------
 with col_center:
+
     map_html = """
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -44,10 +85,17 @@ with col_center:
 <div id="map" style="height:750px; width:100%; border-radius:8px;"></div>
 
 <br>
-<button onclick="addText()" style="width:100%;padding:10px;margin-bottom:5px;background:#ffcc00;font-weight:bold;">Вставити текст</button>
-<button onclick="downloadPNG()" style="width:100%;padding:10px;background:#ffcc00;font-weight:bold;">Завантажити карту PNG</button>
+
+<button onclick="addText()" style="width:100%;padding:10px;margin-bottom:5px;background:#ffcc00;font-weight:bold;">
+Вставити текст
+</button>
+
+<button onclick="downloadPNG()" style="width:100%;padding:10px;background:#ffcc00;font-weight:bold;">
+Завантажити карту PNG
+</button>
 
 <script>
+
 var map = L.map('map',{attributionControl:false}).setView([48.3794,31.1656],6);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
@@ -57,13 +105,13 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
-// --- СТИЛІ ---
+// --- СТИЛЬ ---
 function setStyle(layer){
     if(layer instanceof L.Circle){
-        var radius = layer.getRadius();
+        var r = layer.getRadius();
         layer.setStyle({
             color:'black',
-            fillColor: radius>5000?'yellow':'orange',
+            fillColor: r>5000 ? 'yellow' : 'orange',
             fillOpacity:0.6,
             weight:2
         });
@@ -79,17 +127,25 @@ function setStyle(layer){
 
 // --- DRAW ---
 var drawControl = new L.Control.Draw({
-    draw:{polygon:true, rectangle:true, circle:true, polyline:true, marker:true},
+    draw:{
+        polygon:true,
+        rectangle:true,
+        circle:true,
+        polyline:true,
+        marker:true
+    },
     edit:{featureGroup: drawnItems}
 });
+
 map.addControl(drawControl);
 
 // --- СТВОРЕННЯ ---
 map.on(L.Draw.Event.CREATED, function(e){
+
     var layer = e.layer;
 
-    // МАРКЕР
     if(e.layerType === "marker"){
+
         var blueIcon = L.icon({
             iconUrl:"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
             shadowUrl:"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
@@ -103,8 +159,8 @@ map.on(L.Draw.Event.CREATED, function(e){
             var c = layer.getLatLng();
             layer.bindPopup("Координати:<br>"+c.lat.toFixed(6)+", "+c.lng.toFixed(6)).openPopup();
         });
-    } 
-    else {
+
+    } else {
         setStyle(layer);
     }
 
@@ -115,10 +171,10 @@ map.on(L.Draw.Event.CREATED, function(e){
 function addText(){
     var text = prompt("Введіть текст:");
     if(text){
-        var icon = L.divIcon({
-            html:'<div style="background:white;padding:4px;border-radius:4px;">'+text+'</div>'
-        });
         map.once('click', function(e){
+            var icon = L.divIcon({
+                html:'<div style="background:white;padding:4px;border-radius:4px;">'+text+'</div>'
+            });
             L.marker(e.latlng,{icon:icon}).addTo(map);
         });
     }
@@ -133,17 +189,24 @@ function downloadPNG(){
         link.click();
     });
 }
+
 </script>
 """
     components.html(map_html, height=820)
 
+# -------- RIGHT --------
 with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
-    st.link_button("3.1. Калькулятор дози опромінення", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
-    st.link_button("3.2. Калькулятор аварії на АЕС", "https://sergsh1125-dotcom.github.io/radiation-doza/")
-    st.link_button("3.3. Час перебування", "https://sergsh1125-dotcom.github.io/calculator-time/")
+    st.link_button("3.1. Доза (ЯВ)", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
+    st.link_button("3.2. АЕС", "https://sergsh1125-dotcom.github.io/radiation-doza/")
+    st.link_button("3.3. Час", "https://sergsh1125-dotcom.github.io/calculator-time/")
 
     st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКОВА ІНФОРМАЦІЯ</p>', unsafe_allow_html=True)
-    st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
+    st.link_button("4.1. Метео", "https://www.meteo.gov.ua/")
 
-st.sidebar.caption("ОФІС CBRN v3.13")
+    # ✅ ПОВЕРНУЛИ 4.2
+    with st.expander("📄 4.2. Методичні матеріали"):
+        st.link_button("ДСНС", "https://dsns.gov.ua/")
+        st.link_button("Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
+
+st.sidebar.caption("ОФІС CBRN v3.14")
