@@ -118,22 +118,33 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
-// Налаштування стилю для точкового кола (circlemarker) та маркерів
+// 1. ІКОНКА РАДІАЦІЇ (для кнопки Marker)
+var radIcon = L.divIcon({
+    html: '<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:16px; color:black;">☢️</div>',
+    className: '',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+});
+
+// 2. СТИЛЬ ЖОВТОЇ ТОЧКИ (для кнопки CircleMarker)
 var yellowCircleStyle = {
     color: 'black',
     fillColor: 'yellow',
     fillOpacity: 0.9,
     weight: 2,
-    radius: 8
+    radius: 8  // Фіксований розмір
 };
 
+// НАЛАШТУВАННЯ ПАНЕЛІ
 var drawControl = new L.Control.Draw({
     draw:{ 
-        polygon: true, 
-        rectangle: true, 
-        circle: true, 
-        polyline: true, 
-        marker: true,
+        polygon: { shapeOptions: { color: 'black', fillColor: 'yellow', fillOpacity: 0.5, weight: 2 } },
+        rectangle: { shapeOptions: { color: 'black', fillColor: 'yellow', fillOpacity: 0.5, weight: 2 } },
+        circle: { shapeOptions: { color: 'black', fillColor: 'yellow', fillOpacity: 0.5, weight: 2 } },
+        polyline: { shapeOptions: { color: 'black', weight: 3 } },
+        // ПЕРША КНОПКА (Маркер) -> Радіація
+        marker: { icon: radIcon },
+        // ДРУГА КНОПКА (Коло-маркер) -> Жовта точка
         circlemarker: yellowCircleStyle 
     },
     edit:{ featureGroup: drawnItems }
@@ -142,12 +153,20 @@ map.addControl(drawControl);
 
 map.on(L.Draw.Event.CREATED, function(e){
     var layer = e.layer;
-    if(e.layerType === "circlemarker") {
+    var type = e.layerType;
+
+    if (type === 'marker') {
+        layer.setIcon(radIcon);
+    } else if (type === 'circlemarker') {
         layer.setStyle(yellowCircleStyle);
-    } else if(e.layerType !== "marker") {
+    } else {
         layer.setStyle({color:'black', fillColor:'yellow', fillOpacity:0.5, weight:2});
     }
+
     drawnItems.addLayer(layer);
+    
+    // Автоматичне завершення операції (щоб не малювало серією)
+    drawControl._toolbars.draw._modes[type].handler.disable();
 });
 
 function addText(){
@@ -171,14 +190,14 @@ function clearMap() {
 
 function downloadPNG(){
     const area = document.getElementById("capture_area");
-    // Використання параметрів для усунення зміщення при експорті
+    // Фіксація координат для PNG без зміщення
     html2canvas(area, {
         useCORS: true,
         allowTaint: false,
         backgroundColor: "#0e1117",
         scale: 2,
         scrollX: 0,
-        scrollY: -window.scrollY, // Компенсація вертикальної прокрутки сторінки
+        scrollY: -window.scrollY,
         windowWidth: document.documentElement.offsetWidth,
         windowHeight: document.documentElement.offsetHeight
     }).then(function(canvas){
