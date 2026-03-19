@@ -51,15 +51,15 @@ div[data-testid="stLinkButton"] a {
     text-align: center;
 }
 
-.stExpander {
-    background-color:#ffcc00 !important;
-    border:none !important;
-    border-radius:4px !important;
+/* Стилізація заголовка вибору маркера */
+.selection-label {
+    color: #ffcc00;
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 5px;
 }
-.stExpander summary { color:#000 !important; font-weight:bold !important; }
-.stExpander summary svg { fill:#000 !important; }
 
-div[data-testid="stRadio"] > label { color:#ffcc00 !important; font-weight:bold !important; }
+div[data-testid="stRadio"] > label { display: none; } /* Приховуємо стандартний лейбл */
 </style>
 """, unsafe_allow_html=True)
 
@@ -67,12 +67,10 @@ st.markdown('<p class="main-title">Платформа підтримки при�
 
 col_left, col_center, col_right = st.columns([1.3, 4.4, 1.3])
 
-# -------- ЛІВА ПАНЕЛЬ --------
 with col_left:
     st.markdown('<p class="module-header">МОДУЛЬ 1. РХБ ОБСТАНОВКА</p>', unsafe_allow_html=True)
     st.link_button("1.1. Карта моніторингу (SaveEcoBot)", "https://www.saveecobot.com/radiation-maps")
     st.link_button("1.2. Карта країн ЄС (REMAP)", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
-    st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
     st.link_button("1.4. Фактична радіаційна обстановка", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
     st.link_button("1.5. Фактична хімічна обстановка", "https://chemical-map-6refroql3kghrhuh7tzdma.streamlit.app/")
 
@@ -80,16 +78,24 @@ with col_left:
     st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
     st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
-# -------- ЦЕНТР (КАРТА) --------
 with col_center:
-    marker_choice = st.radio(
-        "Тип маркера:",
-        ("Точка вимірювання (Синя)", "Знак радіації (☢️)"),
-        horizontal=True
+    # Оновлений інтерфейс вибору
+    st.markdown('<p class="selection-label">📍 Вибери тип маркера:</p>', unsafe_allow_html=True)
+    draw_mode = st.radio(
+        "label_hidden",
+        ("Хімічно небезпечний об'єкт (Помаранчевий)", "Радіаційно небезпечний об'єкт (☢️)", "Зона забруднення (Жовте коло)", "Прогноз (Прозоре коло)"),
+        horizontal=True,
+        label_visibility="collapsed"
     )
-    js_marker = 'measurement' if marker_choice == "Точка вимірювання (Синя)" else 'radiation'
+    
+    mode_map = {
+        "Хімічно небезпечний об'єкт (Помаранчевий)": "chem_marker",
+        "Радіаційно небезпечний об'єкт (☢️)": "rad_marker",
+        "Зона забруднення (Жовте коло)": "yellow_circle",
+        "Прогноз (Прозоре коло)": "clear_circle"
+    }
+    active_mode = mode_map[draw_mode]
 
-    # Використовуємо звичайний рядок без f-префікса
     map_template = """
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
@@ -98,7 +104,7 @@ with col_center:
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <div id="capture_area" style="background:#0e1117; padding:5px; border-radius:8px;">
-    <div id="map" style="height:620px; width:100%; border-radius:8px;"></div>
+    <div id="map" style="height:600px; width:100%; border-radius:8px;"></div>
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin-top: 10px;">
@@ -109,7 +115,7 @@ with col_center:
 </div>
 
 <script>
-var currentType = "JS_MARKER_VALUE";
+var activeMode = "JS_MODE_VALUE";
 var map = L.map('map',{attributionControl:false, preferCanvas: true}).setView([48.3794,31.1656],6);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ crossOrigin: 'anonymous' }).addTo(map);
@@ -117,24 +123,34 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ crossOrigin: 
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
-var radiationIcon = L.divIcon({
-    html: '<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:black; font-size:18px; font-weight:bold;">☢️</div>',
-    className: 'c-rad', iconSize:[30,30], iconAnchor:[15,15]
+// 1. РАДІАЦІЙНИЙ ОБ'ЄКТ (Знак + надпис)
+var radIcon = L.divIcon({
+    html: '<div style="display:flex; align-items:center; gap:5px; white-space:nowrap;">' +
+          '<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:black; font-size:18px;">☢️</div>' +
+          '<span style="background:rgba(255,255,255,0.8); color:black; padding:2px 5px; border:1px solid black; border-radius:3px; font-weight:bold; font-size:10px;">Радіаційно небезпечний об’єкт</span></div>',
+    className: 'c-rad', iconSize:[180,30], iconAnchor:[15,15]
 });
 
-var blueIcon = L.divIcon({
-    html: '<div style="background:#007bff; border:2px solid black; border-radius:50%; width:12px; height:12px;"></div>',
-    className: 'c-meas', iconSize:[12,12], iconAnchor:[6,6]
+// 2. ХІМІЧНИЙ ОБ'ЄКТ (Помаранчева точка + надпис)
+var chemIcon = L.divIcon({
+    html: '<div style="display:flex; align-items:center; gap:5px; white-space:nowrap;">' +
+          '<div style="background:#ff6600; border:2px solid black; border-radius:50%; width:15px; height:15px;"></div>' +
+          '<span style="background:rgba(255,255,255,0.8); color:black; padding:2px 5px; border:1px solid black; border-radius:3px; font-weight:bold; font-size:10px;">Хімічно небезпечний об’єкт</span></div>',
+    className: 'c-chem', iconSize:[180,20], iconAnchor:[7,7]
 });
-
-var activeIcon = (currentType === 'measurement') ? blueIcon : radiationIcon;
 
 var drawControl = new L.Control.Draw({
     draw:{
         polygon:true, rectangle:true, polyline:true,
-        circle:false,
-        marker:{ icon: activeIcon },
-        circlemarker:{ fillOpacity: 0, color: 'black', weight: 2, radius: 20 }
+        circle: {
+            shapeOptions: {
+                color: 'black',
+                weight: 2,
+                fillColor: (activeMode === 'clear_circle') ? 'transparent' : 'yellow',
+                fillOpacity: (activeMode === 'clear_circle') ? 0 : 0.5
+            }
+        },
+        marker: { icon: (activeMode === 'chem_marker') ? chemIcon : radIcon }
     },
     edit:{ featureGroup: drawnItems }
 });
@@ -142,9 +158,17 @@ map.addControl(drawControl);
 
 map.on(L.Draw.Event.CREATED, function(e){
     var layer = e.layer;
-    if(e.layerType === "marker") {
-        layer.setIcon(activeIcon);
-    } else if(e.layerType !== "circlemarker") {
+    if(e.layerType === 'marker') {
+        layer.setIcon((activeMode === 'chem_marker') ? chemIcon : radIcon);
+    } 
+    else if(e.layerType === 'circle') {
+        if(activeMode === 'clear_circle') {
+            layer.setStyle({fillColor: 'transparent', fillOpacity: 0, color: 'black'});
+        } else {
+            layer.setStyle({fillColor: 'yellow', fillOpacity: 0.5, color: 'black'});
+        }
+    }
+    else {
         layer.setStyle({color:'black', fillColor:'yellow', fillOpacity:0.5, weight:2});
     }
     drawnItems.addLayer(layer);
@@ -175,11 +199,9 @@ function downloadPNG(){
 }
 </script>
 """
-    # Замінюємо маркер у рядку перед відправкою в компонент
-    map_html = map_template.replace("JS_MARKER_VALUE", js_marker)
+    map_html = map_template.replace("JS_MODE_VALUE", active_mode)
     components.html(map_html, height=750)
 
-# -------- ПРАВА ПАНЕЛЬ --------
 with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
     st.link_button("3.1. Доза при ядерному вибуху", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
@@ -191,4 +213,4 @@ with col_right:
     with st.expander("📄 4.2. Методичні матеріали"):
         st.link_button("📜 Управління РХБЗ", "https://dsns.gov.ua/")
 
-st.sidebar.caption("ОФІС CBRN v3.19")
+st.sidebar.caption("ОФІС CBRN v3.21")
