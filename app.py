@@ -9,16 +9,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. СТИЛІЗАЦІЯ ТА ПРИХОВУВАННЯ СЛУЖБОВИХ ЕЛЕМЕНТІВ ---
+# --- 2. СТИЛІЗАЦІЯ ---
 st.markdown("""
 <style>
-/* Повне приховування службових меню Streamlit */
 #MainMenu, footer, header, .stDeployButton {visibility: hidden; display: none !important;}
-
 .block-container {padding:1rem !important; max-width:100% !important;}
 .stApp {background-color:#0e1117; color:#e0e0e0;}
-
-/* НАЗВА ПОРТАЛУ */
 .main-title {
     color:#ffcc00 !important;
     text-align:center !important;
@@ -28,19 +24,15 @@ st.markdown("""
     margin-bottom:15px !important;
     text-transform:uppercase !important;
 }
-
-/* ЗАГОЛОВКИ МОДУЛІВ */
 .module-header {
     color:#ffcc00 !important;
     border-bottom:1px solid #ffcc00 !important;
     margin-top:10px !important;
     margin-bottom:8px !important;
     font-weight:bold !important;
-    font-size:20px !important;
+    font-size:22px !important;
     text-transform:uppercase !important;
 }
-
-/* УНІФІКОВАНІ ЖОВТІ КНОПКИ ТА ПОСИЛАННЯ */
 div[data-testid="stButton"] button,
 div[data-testid="stLinkButton"] a {
     background-color:#ffcc00 !important;
@@ -55,29 +47,20 @@ div[data-testid="stLinkButton"] a {
     text-decoration: none !important;
     text-align: center;
 }
-
-/* ЕКСПАНДЕР (ЖОВТИЙ) */
 .stExpander {
     background-color:#ffcc00 !important;
     border:none !important;
     border-radius:4px !important;
+    margin-bottom: 5px;
 }
 .stExpander summary { color:#000 !important; font-weight:bold !important; }
 .stExpander summary svg { fill:#000 !important; }
-
-/* Приховування кнопок при друку (залишаємо тільки карту) */
-@media print {
-    .stColumn:first-child, .stColumn:last-child, button, .main-title, .module-header {
-        display: none !important;
-    }
-    .block-container { padding: 0 !important; }
-}
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<p class="main-title">Платформа підтримки прийняття рішення щодо реагування на РХБ інциденти</p>', unsafe_allow_html=True)
 
-col_left, col_center, col_right = st.columns([1.3, 4.4, 1.3])
+col_left, col_center, col_right = st.columns([1.2, 4.6, 1.2])
 
 # -------- ЛІВА ПАНЕЛЬ --------
 with col_left:
@@ -87,57 +70,69 @@ with col_left:
     st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
     st.link_button("1.4. Карта фактичної радіаційної обстановки", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
     st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chemical-map-6refroql3kghrhuh7tzdma.streamlit.app/")
-
-    st.info("💡 На картах 1.4; 1.5 координати завантажуються кліком мишки.")
-
+    st.info("💡 На картах підмодулів 1.4; 1.5 координати точки вимірювання завантажуються кліком мишки.")
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
     st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
     st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
-# -------- ЦЕНТР (РОБОЧА КАРТА) --------
+# -------- ЦЕНТР (КАРТА) --------
 with col_center:
     map_html = """
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <div id="capture_area" style="background:#0e1117; padding:5px; border-radius:8px;">
-    <div id="map" style="height:680px; width:100%; border-radius:8px;"></div>
+    <div id="map" style="height:700px; width:100%; border-radius:8px;"></div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin-top: 10px;">
-    <button onclick="addText()" style="padding:10px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">ВСТАВИТИ ТЕКСТ</button>
-    <button onclick="clearMap()" style="padding:10px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">ОЧИСТИТИ КАРТУ</button>
-    <button onclick="downloadPNG()" style="padding:10px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">ЕКСПОРТ PNG</button>
-    <button onclick="window.print()" style="padding:10px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">ДРУК / PDF</button>
+<div style="display: flex; gap: 5px; margin-top: 10px;">
+    <button onclick="addText()" style="flex:1; padding:12px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-size:12px;">ВСТАВИТИ ТЕКСТ</button>
+    <button onclick="downloadPNG()" style="flex:1; padding:12px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-size:12px;">ЗАВАНТАЖИТИ КАРТУ (PNG)</button>
 </div>
 
 <script>
-// preferCanvas: true вирішує проблему зміщення фігур при експорті
-var map = L.map('map',{attributionControl:false, preferCanvas: true}).setView([48.3794,31.1656],6);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    crossOrigin: 'anonymous'
-}).addTo(map);
+var map = L.map('map',{attributionControl:false}).setView([48.3794,31.1656],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ crossOrigin: 'anonymous' }).addTo(map);
 
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
+// Створення іконки РНО (радіація)
+var radIcon = L.divIcon({
+    html: '<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:16px; color:black;">☢️</div>',
+    className: '',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+});
+
 var drawControl = new L.Control.Draw({
-    draw:{ polygon:true, rectangle:true, circle:true, polyline:true, marker:true },
-    edit:{ featureGroup: drawnItems }
+    draw:{
+        polygon: { shapeOptions: { color: 'black', fillColor: 'yellow', fillOpacity: 0.5, weight: 2 } },
+        rectangle: { shapeOptions: { color: 'black', fillColor: 'yellow', fillOpacity: 0.5, weight: 2 } },
+        circle: { shapeOptions: { color: 'black', fillColor: 'yellow', fillOpacity: 0.5, weight: 2 } },
+        polyline: { shapeOptions: { color: 'black', weight: 3 } },
+        marker: { icon: radIcon }
+    },
+    edit:{featureGroup: drawnItems}
 });
 map.addControl(drawControl);
 
 map.on(L.Draw.Event.CREATED, function(e){
     var layer = e.layer;
-    if(e.layerType !== "marker") {
-        layer.setStyle({color:'black', fillColor:'yellow', fillOpacity:0.5, weight:2});
+    if(e.layerType === "marker"){
+        layer.setIcon(radIcon);
+        layer.on('click', function(){
+            var c = layer.getLatLng();
+            layer.bindPopup("РНО Координати:<br>"+c.lat.toFixed(6)+", "+c.lng.toFixed(6)).openPopup();
+        });
     }
     drawnItems.addLayer(layer);
+    
+    // Завершення операції (вимкнення інструменту після нанесення)
+    drawControl._toolbars.draw._modes[e.layerType].handler.disable();
 });
 
 function addText(){
@@ -153,45 +148,29 @@ function addText(){
     }
 }
 
-function clearMap() {
-    if(confirm("Очистити всі нанесені дані?")) {
-        drawnItems.clearLayers();
-    }
-}
-
 function downloadPNG(){
     const area = document.getElementById("capture_area");
-    // Невелика затримка для стабілізації шарів перед знімком
-    setTimeout(() => {
-        html2canvas(area, {
-            useCORS: true,
-            allowTaint: false,
-            backgroundColor: "#0e1117",
-            scale: 2
-        }).then(function(canvas){
-            var link = document.createElement("a");
-            link.download = "CBRN_Report_Map.png";
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        });
-    }, 150);
+    html2canvas(area, { useCORS: true, backgroundColor: "#0e1117" }).then(function(canvas){
+        var link = document.createElement("a");
+        link.download = "cbrn_map_export.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    });
 }
 </script>
 """
-    components.html(map_html, height=780)
+    components.html(map_html, height=820)
 
 # -------- ПРАВА ПАНЕЛЬ --------
 with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
-    st.link_button("3.1. Калькулятор дози при ядерному вибуху", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
-    st.link_button("3.2. Калькулятор дози при аварії на АЕС", "https://sergsh1125-dotcom.github.io/radiation-doza/")
-    st.link_button("3.3. Розрахунок часу перебування у зоні", "https://sergsh1125-dotcom.github.io/calculator-time/")
-
+    st.link_button("3.1. Калькулятор дози (ЯВ)", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
+    st.link_button("3.2. Калькулятор дози (АЕС)", "https://sergsh1125-dotcom.github.io/radiation-doza/")
+    st.link_button("3.3. Калькулятор часу", "https://sergsh1125-dotcom.github.io/calculator-time/")
     st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКА</p>', unsafe_allow_html=True)
     st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
-
     with st.expander("📄 4.2. Методичні матеріали"):
-        st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/")
+        st.link_button("📜 Управління РХБ захисту", "https://dsns.gov.ua/")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.17")
+st.sidebar.caption("ОФІС CBRN v3.16.1 (Stable + Rad Marker)")
