@@ -72,8 +72,8 @@ var radIcon = L.divIcon({html:'<div style="background:#ffcc00; border:2px solid 
 var yellowIcon = L.divIcon({html:'<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:18px; height:18px;"></div>', className:'', iconSize:[18,18], iconAnchor:[9,9]});
 var blueStyle = {radius:3, fillColor:"#007bff", color:"#000", weight:1, fillOpacity:0.9};
 
-// Ключ збереження
-var storageKey = 'cbrn_map_v26';
+// --- СТІЙКЕ ЗБЕРЕЖЕННЯ ---
+var storageKey = 'cbrn_v27_stable';
 var saved = localStorage.getItem(storageKey);
 if(saved) {
     try {
@@ -87,7 +87,7 @@ if(saved) {
             },
             style: function(f) { return f.properties.s || {}; }
         }).eachLayer(l => drawnItems.addLayer(l));
-    } catch(e) { console.error("Error loading map", e); }
+    } catch(e) { console.log(e); }
 }
 
 function save() {
@@ -105,11 +105,12 @@ function save() {
     localStorage.setItem(storageKey, JSON.stringify(data));
 }
 
+// --- НАЛАШТУВАННЯ ПАНЕЛІ МАЛЮВАННЯ ---
 var drawControl = new L.Control.Draw({
     draw:{
-        polygon: {shapeOptions:{color:'black', fillColor:'yellow', fillOpacity:0.5}},
-        rectangle: {shapeOptions:{color:'black', fillColor:'yellow', fillOpacity:0.5}},
-        circle: {shapeOptions:{color:'black', fillColor:(activeMode==='clear_circle'?'transparent':'yellow'), fillOpacity:(activeMode==='clear_circle'?0:0.5)}},
+        polygon: {shapeOptions:{color:'black', fillColor:'yellow', fillOpacity:0.5, weight:2}},
+        rectangle: {shapeOptions:{color:'black', fillColor:'yellow', fillOpacity:0.5, weight:2}},
+        circle: {shapeOptions:{color:'black', fillColor:(activeMode==='clear_circle'?'transparent':'yellow'), fillOpacity:(activeMode==='clear_circle'?0:0.5), weight:2}},
         marker: {icon: (activeMode==='chem'?yellowIcon:radIcon)},
         circlemarker: blueStyle
     },
@@ -117,15 +118,18 @@ var drawControl = new L.Control.Draw({
 });
 map.addControl(drawControl);
 
+// --- ЛОГІКА ЗАВЕРШЕННЯ ОПЕРАЦІЇ ---
 map.on(L.Draw.Event.CREATED, function(e){
     var layer = e.layer;
-    if(e.layerType === 'marker') layer.setIcon(activeMode==='chem'?yellowIcon:radIcon);
+    if(e.layerType === 'marker') {
+        layer.setIcon(activeMode==='chem'?yellowIcon:radIcon);
+    }
     drawnItems.addLayer(layer);
     save();
-    // Вимкнення інструменту для режиму "один клік - одна операція"
-    if(drawControl._toolbars.draw._modes[e.layerType]) {
-        drawControl._toolbars.draw._modes[e.layerType].handler.disable();
-    }
+    
+    // ПРИМУСОВЕ ВИМКНЕННЯ ІНСТРУМЕНТУ ПІСЛЯ ОДНОГО НАНЕСЕННЯ
+    var type = e.layerType;
+    drawControl._toolbars.draw._modes[type].handler.disable();
 });
 
 map.on(L.Draw.Event.EDITED, save);
@@ -133,13 +137,20 @@ map.on(L.Draw.Event.DELETED, save);
 
 function addText(){
     var t = prompt("Назва об'єкту:");
-    if(t) map.once('click', e => {
-        L.marker(e.latlng, {icon: L.divIcon({html:'<div style="background:rgba(255,255,255,0.85); padding:1px 4px; border:1px solid black; font-weight:bold; color:black; white-space:nowrap; font-size:11px;">'+t+'</div>', className:''})}).addTo(drawnItems);
-        save();
-    });
+    if(t) {
+        map.once('click', e => {
+            L.marker(e.latlng, {icon: L.divIcon({html:'<div style="background:rgba(255,255,255,0.85); padding:1px 4px; border:1px solid black; font-weight:bold; color:black; white-space:nowrap; font-size:11px;">'+t+'</div>', className:''})}).addTo(drawnItems);
+            save();
+        });
+    }
 }
 
-function clearMap() { if(confirm("Очистити всю обстановку?")) { drawnItems.clearLayers(); localStorage.removeItem(storageKey); } }
+function clearMap() { 
+    if(confirm("Видалити всю обстановку?")) { 
+        drawnItems.clearLayers(); 
+        localStorage.removeItem(storageKey); 
+    } 
+}
 
 function downloadPNG(){
     html2canvas(document.getElementById("capture_area"), {useCORS:true, scale:2}).then(c => {
@@ -148,7 +159,6 @@ function downloadPNG(){
 }
 </script>
 """
-    # ВИПРАВЛЕНО: Пряме звернення до підмодуля компонентів для усунення AttributeError
     st.components.v1.html(map_template.replace("JS_MODE_VALUE", active_mode), height=730)
 
 with col_right:
@@ -159,4 +169,4 @@ with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 4</p>', unsafe_allow_html=True)
     st.link_button("☁️ Метео", "https://www.meteo.gov.ua/")
 
-st.sidebar.caption("ОФІС CBRN v3.26 | Fixed")
+st.sidebar.caption("ОФІС CBRN v3.27 | Стабільна обстановка")
