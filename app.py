@@ -34,6 +34,7 @@ st.markdown("""
     text-transform:uppercase !important;
 }
 
+/* КНОПКИ */
 div[data-testid="stButton"] button,
 div[data-testid="stLinkButton"] a {
     background-color:#ffcc00 !important;
@@ -45,7 +46,20 @@ div[data-testid="stLinkButton"] a {
     border-radius:4px !important;
     padding:8px 12px !important;
     display:block !important;
-    line-height:1.2 !important;
+}
+
+/* EXPANDER ЖОВТИЙ */
+.stExpander {
+    background-color:#ffcc00 !important;
+    border:none !important;
+    border-radius:4px !important;
+}
+.stExpander summary {
+    color:#000 !important;
+    font-weight:bold !important;
+}
+.stExpander summary svg {
+    fill:#000 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -58,18 +72,17 @@ col_left, col_center, col_right = st.columns([1.2,4.6,1.2])
 with col_left:
     st.markdown('<p class="module-header">МОДУЛЬ 1. РХБ ОБСТАНОВКА</p>', unsafe_allow_html=True)
 
-    st.link_button("1.1. SaveEcoBot", "https://www.saveecobot.com/radiation-maps")
-    st.link_button("1.2. ЄС карта", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
-    st.link_button("1.3. Прогноз хімії", "http://forecast.inf.ua/")
-    st.link_button("1.4. Радіаційна обстановка", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
-    st.link_button("1.5. Хімічна обстановка", "https://chemical-map-6refroql3kghrhuh7tzdma.streamlit.app/")
+    st.link_button("1.1. Карта радіаційного моніторингу (SaveEcoBot)", "https://www.saveecobot.com/radiation-maps")
+    st.link_button("1.2. Карта радіаційного моніторингу країн ЄС", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
+    st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
+    st.link_button("1.4. Карта фактичної радіаційної обстановки", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
+    st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chemical-map-6refroql3kghrhuh7tzdma.streamlit.app/")
 
-    st.info("💡 На картах підмодулів 1.4; 1.5 координати визначаються кліком мишки")
+    st.info("💡 На картах підмодулів 1.4; 1.5 координати точки вимірювання завантажуються кліком мишки.")
 
-    # ✅ ПОВЕРНУЛИ МОДУЛЬ 2
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
-    st.link_button("2.1. Аварійні картки", "https://sergsh1125-dotcom.github.io/emergency-cards/")
-    st.link_button("2.2. Токсодози", "https://sergsh1125-dotcom.github.io/toxicdoze/")
+    st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
+    st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
 # -------- CENTER --------
 with col_center:
@@ -87,11 +100,11 @@ with col_center:
 <br>
 
 <button onclick="addText()" style="width:100%;padding:10px;margin-bottom:5px;background:#ffcc00;font-weight:bold;">
-Вставити текст
+ВСТАВИТИ ТЕКСТ
 </button>
 
 <button onclick="downloadPNG()" style="width:100%;padding:10px;background:#ffcc00;font-weight:bold;">
-Завантажити карту PNG
+ЗАВАНТАЖИТИ КАРТУ PNG
 </button>
 
 <script>
@@ -197,16 +210,15 @@ function downloadPNG(){
 # -------- RIGHT --------
 with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
-    st.link_button("3.1. Доза (ЯВ)", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
-    st.link_button("3.2. АЕС", "https://sergsh1125-dotcom.github.io/radiation-doza/")
-    st.link_button("3.3. Час", "https://sergsh1125-dotcom.github.io/calculator-time/")
+    st.link_button("3.1. Калькулятор дози опромінення при ядерному вибуху", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
+    st.link_button("3.2. Калькулятор дози опромінення при аварії на АЕС", "https://sergsh1125-dotcom.github.io/radiation-doza/")
+    st.link_button("3.3. Калькулятор розрахунку часу перебування у зоні радіоактивного забруднення", "https://sergsh1125-dotcom.github.io/calculator-time/")
 
     st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКОВА ІНФОРМАЦІЯ</p>', unsafe_allow_html=True)
-    st.link_button("4.1. Метео", "https://www.meteo.gov.ua/")
+    st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
 
-    # ✅ ПОВЕРНУЛИ 4.2
     with st.expander("📄 4.2. Методичні матеріали"):
-        st.link_button("ДСНС", "https://dsns.gov.ua/")
-        st.link_button("Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
+        st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/")
+        st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.14")
+st.sidebar.caption("ОФІС CBRN v3.15")
