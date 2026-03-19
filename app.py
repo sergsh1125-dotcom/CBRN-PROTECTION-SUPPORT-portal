@@ -9,16 +9,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. СТИЛІЗАЦІЯ ТА ПРИХОВУВАННЯ СЛУЖБОВИХ ЕЛЕМЕНТІВ ---
+# --- 2. СТИЛІЗАЦІЯ ---
 st.markdown("""
 <style>
-/* Повне приховування службових меню Streamlit */
 #MainMenu, footer, header, .stDeployButton {visibility: hidden; display: none !important;}
-
 .block-container {padding:1rem !important; max-width:100% !important;}
 .stApp {background-color:#0e1117; color:#e0e0e0;}
 
-/* НАЗВА ПОРТАЛУ */
 .main-title {
     color:#ffcc00 !important;
     text-align:center !important;
@@ -29,7 +26,6 @@ st.markdown("""
     text-transform:uppercase !important;
 }
 
-/* ЗАГОЛОВКИ МОДУЛІВ */
 .module-header {
     color:#ffcc00 !important;
     border-bottom:1px solid #ffcc00 !important;
@@ -40,7 +36,6 @@ st.markdown("""
     text-transform:uppercase !important;
 }
 
-/* УНІФІКОВАНІ ЖОВТІ КНОПКИ ТА ПОСИЛАННЯ */
 div[data-testid="stButton"] button,
 div[data-testid="stLinkButton"] a {
     background-color:#ffcc00 !important;
@@ -56,7 +51,6 @@ div[data-testid="stLinkButton"] a {
     text-align: center;
 }
 
-/* ЕКСПАНДЕР (ЖОВТИЙ) */
 .stExpander {
     background-color:#ffcc00 !important;
     border:none !important;
@@ -65,7 +59,6 @@ div[data-testid="stLinkButton"] a {
 .stExpander summary { color:#000 !important; font-weight:bold !important; }
 .stExpander summary svg { fill:#000 !important; }
 
-/* Приховування кнопок при друку (залишаємо тільки карту) */
 @media print {
     .stColumn:first-child, .stColumn:last-child, button, .main-title, .module-header {
         display: none !important;
@@ -116,7 +109,6 @@ with col_center:
 </div>
 
 <script>
-// preferCanvas: true вирішує проблему зміщення фігур при експорті
 var map = L.map('map',{attributionControl:false, preferCanvas: true}).setView([48.3794,31.1656],6);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
@@ -126,15 +118,33 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
+// Налаштування стилю для точкового кола (circlemarker) та маркерів
+var yellowCircleStyle = {
+    color: 'black',
+    fillColor: 'yellow',
+    fillOpacity: 0.9,
+    weight: 2,
+    radius: 8
+};
+
 var drawControl = new L.Control.Draw({
-    draw:{ polygon:true, rectangle:true, circle:true, polyline:true, marker:true },
+    draw:{ 
+        polygon: true, 
+        rectangle: true, 
+        circle: true, 
+        polyline: true, 
+        marker: true,
+        circlemarker: yellowCircleStyle 
+    },
     edit:{ featureGroup: drawnItems }
 });
 map.addControl(drawControl);
 
 map.on(L.Draw.Event.CREATED, function(e){
     var layer = e.layer;
-    if(e.layerType !== "marker") {
+    if(e.layerType === "circlemarker") {
+        layer.setStyle(yellowCircleStyle);
+    } else if(e.layerType !== "marker") {
         layer.setStyle({color:'black', fillColor:'yellow', fillOpacity:0.5, weight:2});
     }
     drawnItems.addLayer(layer);
@@ -161,20 +171,22 @@ function clearMap() {
 
 function downloadPNG(){
     const area = document.getElementById("capture_area");
-    // Невелика затримка для стабілізації шарів перед знімком
-    setTimeout(() => {
-        html2canvas(area, {
-            useCORS: true,
-            allowTaint: false,
-            backgroundColor: "#0e1117",
-            scale: 2
-        }).then(function(canvas){
-            var link = document.createElement("a");
-            link.download = "CBRN_Report_Map.png";
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        });
-    }, 150);
+    // Використання параметрів для усунення зміщення при експорті
+    html2canvas(area, {
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: "#0e1117",
+        scale: 2,
+        scrollX: 0,
+        scrollY: -window.scrollY, // Компенсація вертикальної прокрутки сторінки
+        windowWidth: document.documentElement.offsetWidth,
+        windowHeight: document.documentElement.offsetHeight
+    }).then(function(canvas){
+        var link = document.createElement("a");
+        link.download = "CBRN_Report_Map.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    });
 }
 </script>
 """
@@ -194,4 +206,4 @@ with col_right:
         st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.17")
+st.sidebar.caption("ОФІС CBRN v3.17.1 (Fixed Export)")
