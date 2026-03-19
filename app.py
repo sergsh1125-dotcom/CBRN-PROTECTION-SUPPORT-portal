@@ -65,9 +65,13 @@ div[data-testid="stLinkButton"] a {
 .stExpander summary { color:#000 !important; font-weight:bold !important; }
 .stExpander summary svg { fill:#000 !important; }
 
-/* Приховування кнопок при друку (залишаємо тільки карту) */
+/* Стилізація радіокнопок для вибору маркера */
+div[data-testid="stRadio"] > label { color:#ffcc00 !important; font-weight:bold !important; }
+div[data-testid="stRadio"] div[data-testid="stMarkdownContainer"] p { color:white !important; }
+
+/* Приховування кнопок при друку */
 @media print {
-    .stColumn:first-child, .stColumn:last-child, button, .main-title, .module-header {
+    .stColumn:first-child, .stColumn:last-child, button, .main-title, .module-header, div[data-testid="stRadio"] {
         display: none !important;
     }
     .block-container { padding: 0 !important; }
@@ -89,6 +93,9 @@ with col_left:
     st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chemical-map-6refroql3kghrhuh7tzdma.streamlit.app/")
 
     st.info("💡 На картах 1.4; 1.5 координати завантажуються кліком мишки.")
+    
+    # Нові інструкції
+    st.success("💡 **Нові інструменти карти:** Оберіть тип маркера (праворуч), використовуйте `Marker` для точок та `Forecast Circle` для прогнозу (без заповнення).")
 
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
     st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
@@ -96,7 +103,16 @@ with col_left:
 
 # -------- ЦЕНТР (РОБОЧА КАРТА) --------
 with col_center:
-    map_html = """
+    # Окремий блок для вибору типу маркера, який буде передано в JS
+    marker_type = st.radio(
+        "Оберіть тип маркера для нанесення:",
+        ("Точка вимірювання (Синя)", "Знак радіації (Фіксований)"),
+        horizontal=True
+    )
+    # Конвертація вибору в зрозумілий для JS формат
+    js_marker_type = 'measurement' if marker_type == "Точка вимірювання (Синя)" else 'radiation'
+
+    map_html = f"""
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
 
@@ -105,7 +121,7 @@ with col_center:
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <div id="capture_area" style="background:#0e1117; padding:5px; border-radius:8px;">
-    <div id="map" style="height:680px; width:100%; border-radius:8px;"></div>
+    <div id="map" style="height:650px; width:100%; border-radius:8px;"></div>
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin-top: 10px;">
@@ -116,69 +132,138 @@ with col_center:
 </div>
 
 <script>
-// preferCanvas: true вирішує проблему зміщення фігур при експорті
-var map = L.map('map',{attributionControl:false, preferCanvas: true}).setView([48.3794,31.1656],6);
+// Змінна, що отримує тип маркера зі Streamlit
+var currentMarkerType = '{js_marker_type}';
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+//preferCanvas: true вирішує проблему зміщення фігур при експорті
+var map = L.map('map',{{attributionControl:false, preferCanvas: true}}).setView([48.3794,31.1656],6);
+
+L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png',{{
     crossOrigin: 'anonymous'
-}).addTo(map);
+}}).addTo(map);
 
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
-var drawControl = new L.Control.Draw({
-    draw:{ polygon:true, rectangle:true, circle:true, polyline:true, marker:true },
-    edit:{ featureGroup: drawnItems }
-});
+// --- ДЕФІНІЦІЯ КАСТОМНИХ ІКОНОК ---
+
+// 1. Знак радіації (Жовте коло, чорний ободок, фіксований розмір)
+// Вставляємо стандартний знак радіації через HTML/SVG
+var radiationIcon = L.divIcon({{
+    html: '<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:black; font-size:18px; font-weight:bold;">☢️</div>',
+    className: 'custom-radiation-icon',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15] // Центр іконки
+}});
+
+// 2. Синя крапка вимірювання (Фіксований розмір)
+var bluePointIcon = L.divIcon({{
+    html: '<div style="background:#007bff; border:2px solid black; border-radius:50%; width:12px; height:12px;"></div>',
+    className: 'custom-measurement-icon',
+    iconSize: [12, 12],
+    iconAnchor: [6, 6] // Центр іконки
+}});
+
+// --- ПАНЕЛЬ МАЛЮВАННЯ (Оновлена) ---
+var drawControl = new L.Control.Draw({{
+    draw:{{
+        polygon:true,
+        rectangle:true,
+        polyline:true,
+        circle:false, // Стандартне коло вимикаємо
+        marker:{{
+            icon: radiationIcon // Дефолтна іконка
+        }},
+        // Додаємо власні інструменти для прогнозного кола
+        circlemarker: {{
+            fillOpacity: 0, // Без заповнення (Прогноз)
+            color: 'black',
+            weight: 2,
+            radius: 20, // Початковий радіус
+            className: 'forecast-circle'
+        }}
+    }},
+    edit:{{ featureGroup: drawnItems }}
+}});
 map.addControl(drawControl);
 
-map.on(L.Draw.Event.CREATED, function(e){
-    var layer = e.layer;
-    if(e.layerType !== "marker") {
-        layer.setStyle({color:'black', fillColor:'yellow', fillOpacity:0.5, weight:2});
-    }
-    drawnItems.addLayer(layer);
-});
+// Оновлюємо іконку маркера при старті на основі вибору користувача
+if(currentMarkerType === 'measurement') {{
+    drawControl.setDrawingOptions({{ marker: {{ icon: bluePointIcon }} }});
+}} else {{
+    drawControl.setDrawingOptions({{ marker: {{ icon: radiationIcon }} }});
+}}
 
-function addText(){
+// Оновлення типу маркера при зміні вибору у Streamlit
+window.parent.document.addEventListener('streamlit:radio:changed', function(e) {{
+    // Streamlit не передає дані напряму в JS при зміні, 
+    // тому цей метод для демонстрації, реальне оновлення відбувається при перезавантаженні фрейму.
+    // Оскільки Streamlit перезавантажує компоненти, 
+    // тип маркера буде оновлено автоматично при старті.
+}});
+
+map.on(L.Draw.Event.CREATED, function(e){{
+    var layer = e.layer;
+    var type = e.layerType;
+
+    if(type === "marker") {{
+        // Додаємо кастомну властивість, щоб знати тип при експорті
+        if(currentMarkerType === 'measurement') {{
+            layer.setIcon(bluePointIcon);
+            layer.options.isMeasurementPoint = true; 
+        }} else {{
+            layer.setIcon(radiationIcon);
+            layer.options.isRadiationSign = true;
+        }}
+    }} else if(type === "circlemarker") {{
+        // Це наше прогнозний круг
+        layer.setStyle({{fillOpacity: 0, color: 'black', weight: 2}});
+        layer.options.isForecastCircle = true;
+    }} else {{
+        // Всі інші фігури (полігони, прямокутники) - жовте заповнення
+        layer.setStyle({{color:'black', fillColor:'yellow', fillOpacity:0.5, weight:2}});
+    }}
+    drawnItems.addLayer(layer);
+}});
+
+function addText(){{
     var text = prompt("Введіть текст:");
-    if(text){
-        map.once('click', function(e){
-            var icon = L.divIcon({
+    if(text){{
+        map.once('click', function(e){{
+            var icon = L.divIcon({{
                 html:'<div style="background:rgba(255,255,255,0.8); padding:2px 5px; border:1px solid black; border-radius:3px; font-weight:bold; color:black; white-space:nowrap;">'+text+'</div>',
                 iconSize: null
             });
-            L.marker(e.latlng,{icon:icon}).addTo(drawnItems);
+            L.marker(e.latlng,{{icon:icon}}).addTo(drawnItems);
         });
-    }
-}
+    }}
+}}
 
-function clearMap() {
-    if(confirm("Очистити всі нанесені дані?")) {
+function clearMap() {{
+    if(confirm("Очистити всі нанесені дані?")) {{
         drawnItems.clearLayers();
-    }
-}
+    }}
+}}
 
-function downloadPNG(){
+function downloadPNG(){{
     const area = document.getElementById("capture_area");
-    // Невелика затримка для стабілізації шарів перед знімком
-    setTimeout(() => {
-        html2canvas(area, {
+    setTimeout(() => {{
+        html2canvas(area, {{
             useCORS: true,
             allowTaint: false,
             backgroundColor: "#0e1117",
             scale: 2
-        }).then(function(canvas){
+        }}).then(function(canvas){{
             var link = document.createElement("a");
-            link.download = "CBRN_Report_Map.png";
+            link.download = "CBRN_Report_Map_v3.18.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
-        });
-    }, 150);
-}
+        }});
+    }}, 150);
+}}
 </script>
 """
-    components.html(map_html, height=780)
+    components.html(map_html, height=800)
 
 # -------- ПРАВА ПАНЕЛЬ --------
 with col_right:
@@ -194,4 +279,4 @@ with col_right:
         st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/")
         st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
-st.sidebar.caption("ОФІС CBRN v3.17")
+st.sidebar.caption("ОФІС CBRN v3.18")
