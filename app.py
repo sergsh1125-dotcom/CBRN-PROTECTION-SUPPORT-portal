@@ -32,7 +32,7 @@ st.markdown("""
     margin-top:10px !important;
     margin-bottom:8px !important;
     font-weight:bold !important;
-    font-size:20px !important;
+    font-size:18px !important;
     text-transform:uppercase !important;
 }
 
@@ -47,52 +47,56 @@ div[data-testid="stLinkButton"] a {
     border-radius:4px !important;
     padding:8px 12px !important;
     display:block !important;
-    text-decoration: none !important;
     text-align: center;
+    text-decoration: none !important;
 }
 
-/* Стилізація радіокнопок у лівій панелі */
+/* Стилізація радіокнопок */
 div[data-testid="stRadio"] label {
     color: #e0e0e0 !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
 }
 div[data-testid="stRadio"] p {
     color: #ffcc00 !important;
     font-weight: bold !important;
-    margin-bottom: 5px !important;
+    font-size: 16px !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<p class="main-title">Платформа підтримки прийняття рішення щодо реагування на РХБ інциденти</p>', unsafe_allow_html=True)
 
-col_left, col_center, col_right = st.columns([1.5, 4.2, 1.3])
+col_left, col_center, col_right = st.columns([1.6, 4.2, 1.2])
 
-# -------- ЛІВА ПАНЕЛЬ --------
+# -------- ЛІВА ПАНЕЛЬ (МОДУЛІ ТА ВИБІР МАРКЕРА) --------
 with col_left:
     st.markdown('<p class="module-header">МОДУЛЬ 1. РХБ ОБСТАНОВКА</p>', unsafe_allow_html=True)
     st.link_button("1.1. Карта моніторингу (SaveEcoBot)", "https://www.saveecobot.com/radiation-maps")
     st.link_button("1.2. Карта країн ЄС (REMAP)", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
-    st.link_button("1.4. Фактична радіаційна обстановка", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
-    st.link_button("1.5. Фактична хімічна обстановка", "https://chemical-map-6refroql3kghrhuh7tzdma.streamlit.app/")
+    st.link_button("1.4. Радіаційна обстановка (Фактична)", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
+    st.link_button("1.5. Хімічна обстановка (Фактична)", "https://chemical-map-6refroql3kghrhuh7tzdma.streamlit.app/")
 
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
     st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
     st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
-    # --- ПЕРЕНЕСЕНА ПАНЕЛЬ МАРКЕРІВ ---
+    st.write("")
+    # ПАНЕЛЬ ВИБОРУ МАРКЕРІВ (ЗА ЗАПИТОМ)
     st.markdown("---")
     draw_mode = st.radio(
         "Вибери тип маркера:",
-        ("ХНО (Хімічно небезпечний об'єкт)", "РНО (Радіаційно небезпечний об'єкт)", "Зона забруднення (Жовта)", "Прогноз (Прозора)"),
+        ("ХНО (Хімічно небезпечний об'єкт)", 
+         "РНО (Радіаційно небезпечний об'єкт)", 
+         "Зона забруднення (Жовте коло)", 
+         "Прогноз (Прозоре коло)"),
         index=0
     )
     
     mode_map = {
         "ХНО (Хімічно небезпечний об'єкт)": "chem",
         "РНО (Радіаційно небезпечний об'єкт)": "rad",
-        "Зона забруднення (Жовта)": "yellow_circle",
-        "Прогноз (Прозора)": "clear_circle"
+        "Зона забруднення (Жовте коло)": "yellow_circle",
+        "Прогноз (Прозоре коло)": "clear_circle"
     }
     active_mode = mode_map[draw_mode]
 
@@ -111,9 +115,9 @@ with col_center:
 
 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin-top: 10px;">
     <button onclick="addText()" style="padding:10px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">ТЕКСТ</button>
-    <button onclick="clearMap()" style="padding:10px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">ОЧИСТИТИ</button>
+    <button onclick="clearMap()" style="padding:10px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">ОЧИСТИТИ КАРТУ</button>
     <button onclick="downloadPNG()" style="padding:10px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">PNG</button>
-    <button onclick="window.print()" style="padding:10px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">PDF</button>
+    <button onclick="window.print()" style="padding:10px; background:#ffcc00; color:black; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">PDF ЗВІТ</button>
 </div>
 
 <script>
@@ -125,52 +129,63 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ crossOrigin: 
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
-// --- ВІДНОВЛЕННЯ ДАНИХ ПРИ ПЕРЕЗАВАНТАЖЕННІ (ЩОБ ОБ'ЄКТИ НЕ ЗНИКАЛИ) ---
-var savedData = localStorage.getItem('cbrn_map_features');
-if (savedData) {
-    var geojson = JSON.parse(savedData);
-    L.geoJSON(geojson, {
-        pointToLayer: function (feature, latlng) {
-            if (feature.properties.type === 'rad') return L.marker(latlng, {icon: radIcon});
-            if (feature.properties.type === 'chem') return L.marker(latlng, {icon: yellowIcon});
-            if (feature.properties.type === 'meas') return L.circleMarker(latlng, bluePointStyle);
-            return L.marker(latlng);
-        },
-        style: function(feature) { return feature.properties.style || {}; }
-    }).eachLayer(function(layer) {
-        drawnItems.addLayer(layer);
-    });
-}
-
-function saveToLocal() {
-    var data = drawnItems.toGeoJSON();
-    // Додаємо властивості стилю для кожного шару, щоб вони збереглися
-    drawnItems.eachLayer(function(layer, i) {
-        if (layer instanceof L.Marker && layer.options.icon === radIcon) data.features[i].properties.type = 'rad';
-        if (layer instanceof L.Marker && layer.options.icon === yellowIcon) data.features[i].properties.type = 'chem';
-        if (layer instanceof L.CircleMarker) data.features[i].properties.type = 'meas';
-        if (layer.options.style) data.features[i].properties.style = layer.options.style;
-    });
-    localStorage.setItem('cbrn_map_features', JSON.stringify(data));
-}
-
-// --- ІКОНКИ ---
+// --- ІКОНКИ ТА СТИЛІ ---
 var radIcon = L.divIcon({
     html: '<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:black; font-size:18px;">☢️</div>',
     className: 'c-rad', iconSize:[30,30], iconAnchor:[15,15]
 });
 
 var yellowIcon = L.divIcon({
-    html: '<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:15px; height:15px;"></div>',
-    className: 'c-yellow', iconSize:[15,15], iconAnchor:[7,7]
+    html: '<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:16px; height:16px;"></div>',
+    className: 'c-yellow', iconSize:[16,16], iconAnchor:[8,8]
 });
 
-var bluePointStyle = { radius: 6, fillColor: "#007bff", color: "#000", weight: 1, opacity: 1, fillOpacity: 0.8 };
+// Зменшена вдвічі синя точка (radius: 3)
+var bluePointStyle = { radius: 3, fillColor: "#007bff", color: "#000", weight: 1, opacity: 1, fillOpacity: 0.9 };
 
-// --- НАЛАШТУВАННЯ ПАНЕЛІ ---
+// --- ВІДНОВЛЕННЯ ДАНИХ ПРИ ПЕРЕМИКАННІ (ПЕРСИСТЕНТНІСТЬ) ---
+var storageKey = 'cbrn_v3_data';
+var saved = localStorage.getItem(storageKey);
+if (saved) {
+    var json = JSON.parse(saved);
+    L.geoJSON(json, {
+        pointToLayer: function(feature, latlng) {
+            if (feature.properties.cType === 'rad') return L.marker(latlng, {icon: radIcon});
+            if (feature.properties.cType === 'chem') return L.marker(latlng, {icon: yellowIcon});
+            if (feature.properties.cType === 'meas') return L.circleMarker(latlng, bluePointStyle);
+            return L.marker(latlng);
+        },
+        style: function(feature) { return feature.properties.style || {}; },
+        onEachLayer: function(layer, l) {
+            if (layer instanceof L.Marker && !layer.options.icon) {
+                 // Для текстових міток
+            }
+            drawnItems.addLayer(layer);
+        }
+    });
+}
+
+function saveData() {
+    var data = drawnItems.toGeoJSON();
+    drawnItems.eachLayer(function(layer, i) {
+        if (layer instanceof L.Marker) {
+            if (layer.options.icon === radIcon) data.features[i].properties.cType = 'rad';
+            else if (layer.options.icon === yellowIcon) data.features[i].properties.cType = 'chem';
+        } else if (layer instanceof L.CircleMarker && layer.options.radius === 3) {
+            data.features[i].properties.cType = 'meas';
+        } else if (layer.options.style || layer.options.fillColor) {
+            data.features[i].properties.style = layer.options;
+        }
+    });
+    localStorage.setItem(storageKey, JSON.stringify(data));
+}
+
+// --- КОНТРОЛЬ МАЛЮВАННЯ ---
 var drawControl = new L.Control.Draw({
     draw:{
-        polygon:true, rectangle:true, polyline:true,
+        polygon: { shapeOptions: { color: 'black', fillColor: 'yellow', fillOpacity: 0.5, weight: 2 } },
+        rectangle: { shapeOptions: { color: 'black', fillColor: 'yellow', fillOpacity: 0.5, weight: 2 } },
+        polyline: { shapeOptions: { color: 'black', weight: 3 } },
         circle: {
             shapeOptions: {
                 color: 'black', weight: 2,
@@ -179,73 +194,67 @@ var drawControl = new L.Control.Draw({
             }
         },
         marker: { icon: (activeMode === 'chem') ? yellowIcon : radIcon },
-        circlemarker: bluePointStyle // ТЕПЕР СИНЯ ТОЧКА ЗАМІСТЬ МАЛОГО КОЛА
+        circlemarker: bluePointStyle
     },
-    edit:{ featureGroup: drawnItems }
+    edit: { featureGroup: drawnItems }
 });
 map.addControl(drawControl);
 
 map.on(L.Draw.Event.CREATED, function(e){
     var layer = e.layer;
-    if(e.layerType === 'marker') {
+    if (e.layerType === 'marker') {
         layer.setIcon((activeMode === 'chem') ? yellowIcon : radIcon);
-    } 
-    else if(e.layerType === 'circle') {
-        var style = (activeMode === 'clear_circle') ? 
-            {fillColor: 'transparent', fillOpacity: 0, color: 'black'} : 
-            {fillColor: 'yellow', fillOpacity: 0.5, color: 'black'};
-        layer.setStyle(style);
-        layer.options.style = style;
     }
     drawnItems.addLayer(layer);
-    saveToLocal();
+    saveData();
 });
 
-map.on(L.Draw.Event.EDITED, saveToLocal);
-map.on(L.Draw.Event.DELETED, saveToLocal);
+map.on(L.Draw.Event.EDITED, saveData);
+map.on(L.Draw.Event.DELETED, saveData);
 
 function addText(){
-    var text = prompt("Введіть текст об'єкту:");
+    var text = prompt("Назва об'єкту:");
     if(text){
         map.once('click', function(e){
-            var icon = L.divIcon({
-                html:'<div style="background:rgba(255,255,255,0.8); padding:2px 5px; border:1px solid black; border-radius:3px; font-weight:bold; color:black; white-space:nowrap; font-size:11px;">'+text+'</div>',
+            var tIcon = L.divIcon({
+                html:'<div style="background:rgba(255,255,255,0.85); padding:1px 4px; border:1px solid black; border-radius:3px; font-weight:bold; color:black; white-space:nowrap; font-size:11px;">'+text+'</div>',
                 iconSize: null
             });
-            L.marker(e.latlng,{icon:icon}).addTo(drawnItems);
-            saveToLocal();
+            L.marker(e.latlng,{icon:tIcon}).addTo(drawnItems);
+            saveData();
         });
     }
 }
 
-function clearMap() { 
-    if(confirm("Очистити карту?")) {
+function clearMap() {
+    if(confirm("Видалити всю обстановку з карти?")) {
         drawnItems.clearLayers();
-        localStorage.removeItem('cbrn_map_features');
+        localStorage.removeItem(storageKey);
     }
 }
 
 function downloadPNG(){
     html2canvas(document.getElementById("capture_area"), {useCORS: true, scale: 2}).then(canvas => {
         var link = document.createElement("a");
-        link.download = "CBRN_Operational_Map.png";
+        link.download = "CBRN_Map_Export.png";
         link.href = canvas.toDataURL();
         link.click();
     });
 }
 </script>
 """
+    # Заміна для усунення SyntaxError та передачі стану
     map_html = map_template.replace("JS_MODE_VALUE", active_mode)
-    components.html(map_html, height=720)
+    components.html(map_html, height=730)
 
-# -------- ПРАВА ПАНЕЛЬ --------
+# -------- ПРАВА ПАНЕЛЬ (РОЗРАХУНКИ) --------
 with col_right:
-    st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
-    st.link_button("3.1. Доза при ядерному вибуху", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
-    st.link_button("3.2. Доза при аварії на АЕС", "https://sergsh1125-dotcom.github.io/radiation-doza/")
-    st.link_button("3.3. Час перебування у зоні", "https://sergsh1125-dotcom.github.io/calculator-time/")
+    st.markdown('<p class="module-header">МОДУЛЬ 3</p>', unsafe_allow_html=True)
+    st.link_button("☢️ Доза (Ядерна)", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
+    st.link_button("⚛️ Доза (АЕС)", "https://sergsh1125-dotcom.github.io/radiation-doza/")
+    st.link_button("⏳ Час роботи", "https://sergsh1125-dotcom.github.io/calculator-time/")
 
-    st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКА</p>', unsafe_allow_html=True)
-    st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
+    st.markdown('<p class="module-header">МОДУЛЬ 4</p>', unsafe_allow_html=True)
+    st.link_button("☁️ Метео", "https://www.meteo.gov.ua/")
 
-st.sidebar.caption("ОФІС CBRN v3.22")
+st.sidebar.caption("ОФІС CBRN v3.23 | Нанесення обстановки")
