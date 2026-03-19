@@ -68,8 +68,14 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{crossOrigin:'a
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
-// Відновлення об'єктів
-var saved = localStorage.getItem('cbrn_map_v24');
+// ІКОНКИ (РНО зменшено до 18px для відповідності ХНО)
+var radIcon = L.divIcon({html:'<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:12px;">☢️</div>', className:'', iconSize:[18,18], iconAnchor:[9,9]});
+var yellowIcon = L.divIcon({html:'<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:18px; height:18px;"></div>', className:'', iconSize:[18,18], iconAnchor:[9,9]});
+var blueStyle = {radius:3, fillColor:"#007bff", color:"#000", weight:1, fillOpacity:0.9};
+
+// ВІДНОВЛЕННЯ ДАНИХ
+var storageKey = 'cbrn_map_final';
+var saved = localStorage.getItem(storageKey);
 if(saved) {
     var json = JSON.parse(saved);
     L.geoJSON(json, {
@@ -95,12 +101,8 @@ function save() {
             data.features[i].properties.s = l.options;
         }
     });
-    localStorage.setItem('cbrn_map_v24', JSON.stringify(data));
+    localStorage.setItem(storageKey, JSON.stringify(data));
 }
-
-var radIcon = L.divIcon({html:'<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:18px;">☢️</div>', className:'', iconSize:[30,30], iconAnchor:[15,15]});
-var yellowIcon = L.divIcon({html:'<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:16px; height:16px;"></div>', className:'', iconSize:[16,16], iconAnchor:[8,8]});
-var blueStyle = {radius:3, fillColor:"#007bff", color:"#000", weight:1, fillOpacity:0.9};
 
 var drawControl = new L.Control.Draw({
     draw:{
@@ -114,29 +116,32 @@ var drawControl = new L.Control.Draw({
 });
 map.addControl(drawControl);
 
+// ЗАВЕРШЕННЯ ОПЕРАЦІЇ ПІСЛЯ ОДНОГО НАНЕСЕННЯ
 map.on(L.Draw.Event.CREATED, function(e){
     var layer = e.layer;
     if(e.layerType === 'marker') layer.setIcon(activeMode==='chem'?yellowIcon:radIcon);
     drawnItems.addLayer(layer);
     save();
+    // Вимкнення активного інструменту малювання після створення об'єкта
+    drawControl._toolbars.draw._modes[e.layerType].handler.disable();
 });
 
 map.on(L.Draw.Event.EDITED, save);
 map.on(L.Draw.Event.DELETED, save);
 
 function addText(){
-    var t = prompt("Текст:");
+    var t = prompt("Назва об'єкту:");
     if(t) map.once('click', e => {
-        L.marker(e.latlng, {icon: L.divIcon({html:'<div style="background:white; padding:2px; border:1px solid black; font-weight:bold; white-space:nowrap;">'+t+'</div>', className:''})}).addTo(drawnItems);
+        L.marker(e.latlng, {icon: L.divIcon({html:'<div style="background:rgba(255,255,255,0.8); padding:2px; border:1px solid black; font-weight:bold; white-space:nowrap; font-size:11px;">'+t+'</div>', className:''})}).addTo(drawnItems);
         save();
     });
 }
 
-function clearMap() { if(confirm("Очистити все?")) { drawnItems.clearLayers(); localStorage.removeItem('cbrn_map_v24'); } }
+function clearMap() { if(confirm("Очистити всю обстановку?")) { drawnItems.clearLayers(); localStorage.removeItem(storageKey); } }
 
 function downloadPNG(){
     html2canvas(document.getElementById("capture_area"), {useCORS:true, scale:2}).then(c => {
-        var l = document.createElement("a"); l.download="map.png"; l.href=c.toDataURL(); l.click();
+        var l = document.createElement("a"); l.download="CBRN_Map.png"; l.href=c.toDataURL(); l.click();
     });
 }
 </script>
@@ -151,4 +156,4 @@ with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 4</p>', unsafe_allow_html=True)
     st.link_button("☁️ Метео", "https://www.meteo.gov.ua/")
 
-st.sidebar.caption("ОФІС CBRN v3.24 (Stable)")
+st.sidebar.caption("ОФІС CBRN v3.25 | Фіксована обстановка")
