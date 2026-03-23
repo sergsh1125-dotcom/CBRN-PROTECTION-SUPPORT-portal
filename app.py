@@ -68,7 +68,7 @@ div[data-testid="stLinkButton"] a {
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<p class="main-title">Платформа підтримки прийняття рішення щодо реагування на РХБ інциденти</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">Платформа підтримки заходів реагування на ХБРЯ інциденти</p>', unsafe_allow_html=True)
 
 col_left, col_center, col_right = st.columns([1.3, 4.4, 1.3])
 
