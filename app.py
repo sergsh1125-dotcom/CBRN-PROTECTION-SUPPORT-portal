@@ -3,7 +3,7 @@ map.on(L.Draw.Event.CREATED, function(e){
     var type = e.layerType;
     var label = "";
 
-    // Розрахунок площі ТІЛЬКИ в км²
+    # Розрахунок площі ТІЛЬКИ в км²
     if (type === 'rectangle' || type === 'polygon') {
         var areaM2 = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
         var areaKm2 = (areaM2 / 1000000).toFixed(2); // Переводимо м² у км²
