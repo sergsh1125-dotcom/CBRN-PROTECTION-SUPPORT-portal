@@ -80,7 +80,7 @@ with col_left:
     st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
     st.link_button("1.4. Карта фактичної радіаційної обстановки", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
     st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chemical-map-dgtnhrsz7azy3epkzid2g2.streamlit.app/")
-    st.link_button ("1.6. Карта фактичної радіаційної та хімічної обстановки", https://map-obstanovka-vuvukyx4vwu9jrhuv68vcg.streamlit.app/)
+    st.link_button("1.6. Карта фактичної радіаційної та хімічної обстановки",https://map-obstanovka-vuvukyx4vwu9jrhuv68vcg.streamlit.app/)
     st.info("💡 На картах 1.4; 1.5; 1.6 координати завантажуються кліком мишки.")
 
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
