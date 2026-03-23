@@ -221,29 +221,29 @@ with col_right:
     st.link_button("4.1. Укргідрометеоцентр", "https://www.meteo.gov.ua/")
     st.link_button("4.2. Карти Windy","https://www.windy.com/?47.446,30.223,6") 
     with st.expander("📚 4.3. Методичні матеріали"):
-    st.info("Нормативно-правова база та СОП (стандартні операційні процедури)")
+        st.info("Нормативно-правова база та СОП (стандартні операційні процедури)")
     
-    st.link_button(
+        st.link_button(
         "🌐 Управління РХБ захисту ДСНС", 
         "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu",
         use_container_width=True
-    )
+        )
     
-    st.link_button(
+        st.link_button(
         "📖 Методичні рекомендації", 
         "https://dsns.gov.ua/metodichni-rekomendaciyi",
         use_container_width=True
-    )
+        )
     
-    st.link_button(
+        st.link_button(
         "🧪 СОП 1.1/РХБЗ: Демеркуризація (Ртуть)", 
         "https://kyiv.dsns.gov.ua/upload/2/5/3/3/4/4/3/sop-demerkurizaciia-11-rxbz-dsns.pdf",
         use_container_width=True
-    )
+        )
     
     # Виправлено посилання (прибрано зайву дужку в кінці)
-    st.link_button(
+        st.link_button(
         "⚠️ СОП 1.2/РХБЗ: Дії при НС з НХР", 
         "https://kyiv.dsns.gov.ua/upload/2/5/3/3/4/4/4/sop-poriadok-dii-12-rxbz-dsns.pdf",
         use_container_width=True
-    )
+        )
