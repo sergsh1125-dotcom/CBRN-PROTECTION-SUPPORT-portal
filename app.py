@@ -223,5 +223,5 @@ with col_right:
     with st.expander("4.2. Методичні матеріали"):
         st.link_button("Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
         st.link_button("Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
-        st.link_button("СОП Порядок проведення демеркуризації", "https://kyiv.dsns.gov.ua/upload/2/5/3/3/4/4/3/sop-demerkurizaciia-11-rxbz-dsns.pdf")
-        st.link_button("СОП Порядок дій при залученні пожежно-рятувальних підрозділів на надзвичайну ситуацію, пов'язану з НХР", "https://kyiv.dsns.gov.ua/upload/2/5/3/3/4/4/4/sop-poriadok-dii-12-rxbz-dsns.pdf)")
+        st.link_button("СОП 1.1/РХБЗ/ДСНС Порядок проведення демеркуризації", "https://kyiv.dsns.gov.ua/upload/2/5/3/3/4/4/3/sop-demerkurizaciia-11-rxbz-dsns.pdf")
+        st.link_button("СОП 1.2/РХБЗ/ДСНС Порядок дій при залученні пожежно-рятувальних підрозділів на надзвичайну ситуацію, пов'язану з НХР", "https://kyiv.dsns.gov.ua/upload/2/5/3/3/4/4/4/sop-poriadok-dii-12-rxbz-dsns.pdf)")
