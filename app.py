@@ -236,14 +236,8 @@ with col_right:
         )
     
         st.link_button(
-        "🧪 СОП 1.1/РХБЗ: Демеркуризація (Ртуть)", 
-        "https://kyiv.dsns.gov.ua/upload/2/5/3/3/4/4/3/sop-demerkurizaciia-11-rxbz-dsns.pdf",
+        "СОП 1.1/РХБЗ/ДСНС: Порядок проведення демеркуризації, СОП 1.2. Порядок дій пожежно-рятувальних підрозділів при залученні на НС, пов'язану з НХР", 
+        "https://kyiv.dsns.gov.ua/navchalniy-centr-gu/sluzhbova-pidgotovka/normativno-pravovi-akti",
         use_container_width=True
         )
-    
-    # Виправлено посилання (прибрано зайву дужку в кінці)
-        st.link_button(
-        "⚠️ СОП 1.2/РХБЗ: Дії при НС з НХР", 
-        "https://kyiv.dsns.gov.ua/upload/2/5/3/3/4/4/4/sop-poriadok-dii-12-rxbz-dsns.pdf",
-        use_container_width=True
-        )
+        
