@@ -1,7 +1,5 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import pandas as pd
-from datetime import datetime
 
 # --- 1. НАЛАШТУВАННЯ СТОРІНКИ ---
 st.set_page_config(
@@ -14,12 +12,10 @@ st.set_page_config(
 # --- 2. ГЛОБАЛЬНІ СТИЛІ (CSS) ---
 st.markdown("""
 <style>
-    /* Базові налаштування */
     #MainMenu, footer, header, .stDeployButton {visibility: hidden; display: none !important;}
     .block-container {padding:1rem !important; max-width:100% !important; padding-top: 1.5rem !important;}
     .stApp {background-color:#0e1117; color:#e0e0e0;}
 
-    /* Заголовки */
     .main-title {
         color:#ffcc00 !important;
         text-align:center !important;
@@ -40,8 +36,6 @@ st.markdown("""
         text-transform:uppercase !important;
     }
 
-    /* СТИЛЬ ДЛЯ КНОПОК ТА ПОСИЛАНЬ */
-    div[data-testid="stButton"] button,
     div.stLinkButton > a {
         background-color:#ffcc00 !important;
         color:#000 !important;
@@ -56,32 +50,18 @@ st.markdown("""
         justify-content: center !important;
         text-align: center !important;
         text-decoration: none !important;
-        white-space: pre-wrap !important; /* Дозволяє перенос рядка */
+        white-space: pre-wrap !important;
         height: auto !important;
         min-height: 3em !important;
         line-height: 1.2 !important;
     }
 
-    div[data-testid="stButton"] button:hover,
-    div.stLinkButton > a:hover {
-        background-color: #ffea00 !important;
-        border: 1px solid #4CAF50 !important;
-    }
-
-    /* Експандери */
-    .stExpander {
+    div.stExpander {
         background-color: transparent !important;
         border: 1px solid #ffcc00 !important;
         border-radius:4px !important;
     }
-    .stExpander summary { color:#ffcc00 !important; font-weight:bold !important; }
-
-    @media print {
-        .stColumn:first-child, .stColumn:last-child, button, .main-title, .module-header {
-            display: none !important;
-        }
-        .block-container { padding: 0 !important; }
-    }
+    div.stExpander summary { color:#ffcc00 !important; font-weight:bold !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -89,27 +69,38 @@ st.markdown('<p class="main-title">Платформа підтримки зах�
 
 col_left, col_center, col_right = st.columns([1.3, 4.4, 1.3])
 
-# -------- ЛІВА ПАНЕЛЬ (МОДУЛІ 1 ТА 2) --------
+# -------- ЛІВА ПАНЕЛЬ --------
 with col_left:
     st.markdown('<p class="module-header">МОДУЛЬ 1. РХБ ОБСТАНОВКА</p>', unsafe_allow_html=True)
     st.link_button("1.1. Карта радіаційного моніторингу (SaveEcoBot)", "https://www.saveecobot.com/radiation-maps")
-    st.link_button ("1.2. Карта радіаційного моніторингу Укргідромету", "https://www.meteo.gov.ua/#RADIO")
-    st.link_button("1.3. Карта радіаційного моніторингу країн ЄС", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
-    st.link_button("1.4. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
-    st.link_button("1.5. Карта фактичної радіаційної обстановки", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
-    st.link_button("1.6. Карта фактичної хімічної обстановки", "https://chemical-map-dgtnhrsz7azy3epkzid2g2.streamlit.app/")
-    st.link_button("1.7. Карта фактичної РХБ обстановки", "https://map-obstanovka-vuvukyx4vwu9jrhuv68vcg.streamlit.app/")
-    st.info("💡 На картах 1.5; 1.6; 1.7 координати завантажуються кліком мишки.")
+    st.link_button("1.2. Карта радіаційного моніторингу Укргідромету", "https://www.meteo.gov.ua/#RADIO")
+    st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
+    st.link_button("1.4. Карта фактичної РХБ обстановки", "https://map-obstanovka-vuvukyx4vwu9jrhuv68vcg.streamlit.app/")
+    st.info("💡 Координати завантажуються кліком мишки.")
 
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
     st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
     st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
-# -------- ЦЕНТР (РОБОЧА КАРТА З ІНСТРУМЕНТАМИ) --------
+# -------- ЦЕНТР (КАРТА З РОЗРАХУНКАМИ) --------
 with col_center:
     map_html = """
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+<style>
+    /* Стиль для написів на карті (площа, радіус) */
+    .map-label {
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 1px solid black !important;
+        color: black !important;
+        font-weight: bold !important;
+        font-size: 11px !important;
+        padding: 2px 4px !important;
+        border-radius: 3px !important;
+        box-shadow: none !important;
+    }
+</style>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -132,6 +123,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{crossOrigin: '
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
+var yellowStyle = { color: 'black', fillColor: 'yellow', fillOpacity: 0.5, weight: 2 };
+
 var radIcon = L.divIcon({
     html: '<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:16px;">☢️</div>',
     className: '', iconSize: [24, 24], iconAnchor: [12, 12]
@@ -139,11 +132,12 @@ var radIcon = L.divIcon({
 
 var drawControl = new L.Control.Draw({
     draw:{ 
-        polygon: { shapeOptions: { color: 'black', fillColor: 'yellow', fillOpacity: 0.5 } },
+        polygon: { shapeOptions: yellowStyle, showArea: true },
+        rectangle: { shapeOptions: yellowStyle, showArea: true },
+        circle: { shapeOptions: yellowStyle, showRadius: true },
         circlemarker: { color: 'black', fillColor: 'yellow', fillOpacity: 0.9, radius: 8 },
         marker: { icon: radIcon },
-        polyline: { shapeOptions: { color: 'black', weight: 3 } },
-        rectangle: true, circle: true
+        polyline: { shapeOptions: { color: 'black', weight: 3 } }
     },
     edit:{ featureGroup: drawnItems }
 });
@@ -151,7 +145,32 @@ map.addControl(drawControl);
 
 map.on(L.Draw.Event.CREATED, function(e){
     var layer = e.layer;
+    var type = e.layerType;
+    var label = "";
+
+    // Розрахунок площі (Rectangle / Polygon)
+    if (type === 'rectangle' || type === 'polygon') {
+        var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+        label = "S: " + L.GeometryUtil.readableArea(area, true);
+    }
+    
+    // Розрахунок радіуса (Circle)
+    if (type === 'circle') {
+        var radius = layer.getRadius();
+        label = "R: " + (radius >= 1000 ? (radius/1000).toFixed(2) + ' км' : radius.toFixed(0) + ' м');
+    }
+
+    if (layer.setStyle) { layer.setStyle(yellowStyle); }
     drawnItems.addLayer(layer);
+
+    // Додаємо напис, якщо він згенерований
+    if (label !== "") {
+        layer.bindTooltip(label, {
+            permanent: true, 
+            direction: 'center', 
+            className: 'map-label'
+        }).openTooltip();
+    }
 });
 
 function addText(){
@@ -159,7 +178,7 @@ function addText(){
     if(text){
         map.once('click', function(e){
             var icon = L.divIcon({
-                html:'<div style="background:white; padding:2px 5px; border:1px solid black; border-radius:3px; font-weight:bold; color:black; white-space:nowrap;">'+text+'</div>',
+                html:'<div class="map-label">'+text+'</div>',
                 iconSize: null
             });
             L.marker(e.latlng,{icon:icon}).addTo(drawnItems);
@@ -172,7 +191,7 @@ function clearMap() { if(confirm("Очистити карту?")) drawnItems.cle
 function downloadPNG(){
     html2canvas(document.getElementById("capture_area"), {useCORS:true, scale:2}).then(canvas => {
         var link = document.createElement("a");
-        link.download = "CBRN_Map.png";
+        link.download = "CBRN_Map_Report.png";
         link.href = canvas.toDataURL();
         link.click();
     });
@@ -181,28 +200,20 @@ function downloadPNG(){
 """
     components.html(map_html, height=750)
 
-# -------- ПРАВА ПАНЕЛЬ (МОДУЛІ 3 ТА 4 + WINDY) --------
+# -------- ПРАВА ПАНЕЛЬ --------
 with col_right:
-    # МОНІТОРИНГ ВІТРУ (WINDY)
     with st.expander("🌤️ МОНІТОРИНГ ВІТРУ", expanded=False):
         windy_html = """
-        <iframe 
-            width="100%" height="300" 
-            src="https://embed.windy.com/embed2.html?lat=49.0&lon=31.0&zoom=5&level=surface&overlay=wind&product=ecmwf&metricWind=m%2Fs&metricTemp=%C2%B0C" 
-            frameborder="0">
-        </iframe>
+        <iframe width="100%" height="300" src="https://embed.windy.com/embed2.html?lat=49.0&lon=31.0&zoom=5&level=surface&overlay=wind&product=ecmwf&metricWind=m%2Fs&metricTemp=%C2%B0C" frameborder="0"></iframe>
         """
         components.html(windy_html, height=310)
-        st.caption("Дані в реальному часі: Windy.com")
 
     st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
     st.link_button("3.1. Калькулятор дози (Ядерний вибух)", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
     st.link_button("3.2. Калькулятор дози (Аварія на АЕС)", "https://sergsh1125-dotcom.github.io/radiation-doza/")
-    st.link_button("3.3. Розрахунок часу перебування у зоні радіоактивного забруднення", "https://sergsh1125-dotcom.github.io/calculator-time/")
+    st.link_button("3.3. Розрахунок часу перебування", "https://sergsh1125-dotcom.github.io/calculator-time/")
 
-    st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКОВА ІНФОРМАЦІЯ </p>', unsafe_allow_html=True)
+    st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКА</p>', unsafe_allow_html=True)
     st.link_button("4.1. Укргідрометеоцентр", "https://www.meteo.gov.ua/")
-    st.link_button("4.2. Нормативно-правова база РХЗ", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu"
-        )
-    st.link_button("4.3. СОП 1.1/РХБЗ: Демеркуризація\nСОП 1.2: Дії підрозділів при НС з НХР", "https://kyiv.dsns.gov.ua/navchalniy-centr-gu/sluzhbova-pidgotovka/normativno-pravovi-akti"
-        )
+    st.link_button("4.2. Нормативно-правова база РХЗ", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
+    st.link_button("4.3. СОП 1.1/РХБЗ: Демеркуризація\nСОП 1.2: Дії підрозділів при НС з НХР", "https://kyiv.dsns.gov.ua/navchalniy-centr-gu/sluzhbova-pidgotovka/normativno-pravovi-akti")
