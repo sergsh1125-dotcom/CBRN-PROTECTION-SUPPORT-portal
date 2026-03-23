@@ -9,6 +9,43 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# --- 2. ГЛОБАЛЬНІ СТИЛІ (CSS) ---
+st.markdown("""
+<style>
+    /* Прибираємо зайві відступи зверху */
+    .block-container {
+        padding-top: 1.5rem;
+        padding-bottom: 0rem;
+    }
+    
+    /* Приховуємо стандартні елементи Streamlit для "чистого" вигляду */
+    #MainMenu, footer, header {visibility: hidden;}
+
+    /* СТИЛЬ ДЛЯ ДВОРЯДКОВИХ КНОПОК-ПОСИЛАНЬ (СОП) */
+    div.stLinkButton > a {
+        white-space: pre-wrap !important; 
+        height: auto !important;         
+        min-height: 4em !important;
+        line-height: 1.2 !important;     
+        padding: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        background-color: #FFD600 !important; /* Жовтий колір для РХБЗ */
+        color: black !important;
+        border-radius: 8px !important;
+        font-weight: bold !important;
+        border: 1px solid #cca300 !important;
+    }
+
+    div.stLinkButton > a:hover {
+        background-color: #ffea00 !important;
+        border: 2px solid #4CAF50 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # --- 2. СТИЛІЗАЦІЯ ---
 st.markdown("""
 <style>
