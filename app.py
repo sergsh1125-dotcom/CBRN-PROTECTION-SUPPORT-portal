@@ -202,7 +202,7 @@ with col_right:
 
     st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКОВА ІНФОРМАЦІЯ </p>', unsafe_allow_html=True)
     st.link_button("4.1. Укргідрометеоцентр", "https://www.meteo.gov.ua/")
-    with st.expander("4.2. Нормативно-правова база РХЗ":
+    st.link_button("4.2. Нормативно-правова база РХЗ":
          st.link_button(
             "Управління РХБ захисту ДСНС", 
             "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu"
