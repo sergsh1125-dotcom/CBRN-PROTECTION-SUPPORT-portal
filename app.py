@@ -62,6 +62,12 @@ st.markdown("""
         border-radius:4px !important;
     }
     div.stExpander summary { color:#ffcc00 !important; font-weight:bold !important; }
+
+    @media print {
+        .stColumn:first-child, .stColumn:last-child, button, .main-title, .module-header {
+            display: none !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -74,28 +80,28 @@ with col_left:
     st.markdown('<p class="module-header">МОДУЛЬ 1. РХБ ОБСТАНОВКА</p>', unsafe_allow_html=True)
     st.link_button("1.1. Карта радіаційного моніторингу (SaveEcoBot)", "https://www.saveecobot.com/radiation-maps")
     st.link_button("1.2. Карта радіаційного моніторингу Укргідромету", "https://www.meteo.gov.ua/#RADIO")
-    st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
-    st.link_button("1.4. Карта фактичної РХБ обстановки", "https://map-obstanovka-vuvukyx4vwu9jrhuv68vcg.streamlit.app/")
+    st.link_button("1.3. Карта радіаційного моніторингу країн ЄС", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
+    st.link_button("1.4. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
+    st.link_button("1.5. Карта фактичної РХБ обстановки", "https://map-obstanovka-vuvukyx4vwu9jrhuv68vcg.streamlit.app/")
     st.info("💡 Координати завантажуються кліком мишки.")
 
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
     st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
     st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
-# -------- ЦЕНТР (КАРТА З РОЗРАХУНКАМИ) --------
+# -------- ЦЕНТР (КАРТА) --------
 with col_center:
     map_html = """
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
 <style>
-    /* Стиль для написів на карті (площа, радіус) */
     .map-label {
         background: rgba(255, 255, 255, 0.9) !important;
         border: 1px solid black !important;
         color: black !important;
         font-weight: bold !important;
         font-size: 11px !important;
-        padding: 2px 4px !important;
+        padding: 1px 4px !important;
         border-radius: 3px !important;
         box-shadow: none !important;
     }
@@ -123,7 +129,9 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{crossOrigin: '
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
-var yellowStyle = { color: 'black', fillColor: 'yellow', fillOpacity: 0.5, weight: 2 };
+// Стилі: Напівпрозорий для зон та Насичений для точок
+var yellowStyle = { color: 'black', fillColor: 'yellow', fillOpacity: 0.4, weight: 2 };
+var solidYellowStyle = { color: 'black', fillColor: '#FFD600', fillOpacity: 1.0, weight: 2, radius: 8 };
 
 var radIcon = L.divIcon({
     html: '<div style="background:#ffcc00; border:2px solid black; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:16px;">☢️</div>',
@@ -132,10 +140,10 @@ var radIcon = L.divIcon({
 
 var drawControl = new L.Control.Draw({
     draw:{ 
-        polygon: { shapeOptions: yellowStyle, showArea: true },
-        rectangle: { shapeOptions: yellowStyle, showArea: true },
-        circle: { shapeOptions: yellowStyle, showRadius: true },
-        circlemarker: { color: 'black', fillColor: 'yellow', fillOpacity: 0.9, radius: 8 },
+        polygon: { shapeOptions: yellowStyle },
+        rectangle: { shapeOptions: yellowStyle },
+        circle: { shapeOptions: yellowStyle },
+        circlemarker: solidYellowStyle,
         marker: { icon: radIcon },
         polyline: { shapeOptions: { color: 'black', weight: 3 } }
     },
@@ -148,26 +156,29 @@ map.on(L.Draw.Event.CREATED, function(e){
     var type = e.layerType;
     var label = "";
 
-    // Розрахунок площі (Rectangle / Polygon)
     if (type === 'rectangle' || type === 'polygon') {
         var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
         label = "S: " + L.GeometryUtil.readableArea(area, true);
     }
     
-    // Розрахунок радіуса (Circle)
     if (type === 'circle') {
         var radius = layer.getRadius();
         label = "R: " + (radius >= 1000 ? (radius/1000).toFixed(2) + ' км' : radius.toFixed(0) + ' м');
     }
 
-    if (layer.setStyle) { layer.setStyle(yellowStyle); }
+    if (type === 'circlemarker') {
+        layer.setStyle(solidYellowStyle);
+    } else if (layer.setStyle) {
+        layer.setStyle(yellowStyle);
+    }
+    
     drawnItems.addLayer(layer);
 
-    // Додаємо напис, якщо він згенерований
     if (label !== "") {
         layer.bindTooltip(label, {
             permanent: true, 
-            direction: 'center', 
+            direction: 'top',      // Напис зверху
+            offset: [0, -15],      // Зсув вгору, щоб не перекривати центр
             className: 'map-label'
         }).openTooltip();
     }
@@ -191,7 +202,7 @@ function clearMap() { if(confirm("Очистити карту?")) drawnItems.cle
 function downloadPNG(){
     html2canvas(document.getElementById("capture_area"), {useCORS:true, scale:2}).then(canvas => {
         var link = document.createElement("a");
-        link.download = "CBRN_Map_Report.png";
+        link.download = "CBRN_Report_Map.png";
         link.href = canvas.toDataURL();
         link.click();
     });
