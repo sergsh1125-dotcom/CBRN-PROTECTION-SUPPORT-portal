@@ -217,7 +217,7 @@ with col_right:
     st.link_button("3.1. Калькулятор дози при ядерному вибуху", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
     st.link_button("3.2. Калькулятор дози при аварії на АЕС", "https://sergsh1125-dotcom.github.io/radiation-doza/")
     st.link_button("3.3. Розрахунок часу перебування у зоні", "https://sergsh1125-dotcom.github.io/calculator-time/")
-    st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКОВОВА ІНФОРМАЦІЯ</p>', unsafe_allow_html=True)
+    st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКОВА ІНФОРМАЦІЯ</p>', unsafe_allow_html=True)
     st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
     st.link_button("4.2. Карта метеобстановки","https://www.windy.com/?47.446,30.223,6") 
     with st.expander("4.2. Методичні матеріали"):
