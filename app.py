@@ -222,7 +222,7 @@ with col_right:
     st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
 
     with st.expander("📄 4.2. Методичні матеріали"):
-        st.link_button("📜 Управління РХБ захисту ДСНС", "https://dsns.gov.ua/")
-        st.link_button("📚 Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
+        st.link_button("Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
+        st.link_button("Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
 
 st.sidebar.caption("ОФІС CBRN v3.17.1 (Fixed Export)")
