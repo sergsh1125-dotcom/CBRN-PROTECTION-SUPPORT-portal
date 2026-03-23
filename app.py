@@ -79,7 +79,7 @@ with col_left:
     st.link_button("1.2. Карта радіаційного моніторингу країн ЄС", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
     st.link_button("1.3. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
     st.link_button("1.4. Карта фактичної радіаційної обстановки", "https://radiation-situation-mt5eyizylhpa7sxaltawpk.streamlit.app/")
-    st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chemical-map-edzugpgqfwheftnrvr9zmu.streamlit.app/")
+    st.link_button("1.5. Карта фактичної хімічної обстановки", "https://chemical-map-dgtnhrsz7azy3epkzid2g2.streamlit.app/")
 
     st.info("💡 На картах 1.4; 1.5 координати завантажуються кліком мишки.")
 
