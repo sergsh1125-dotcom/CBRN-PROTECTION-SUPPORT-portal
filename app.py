@@ -218,10 +218,10 @@ with col_right:
     st.link_button("3.2. Калькулятор дози при аварії на АЕС", "https://sergsh1125-dotcom.github.io/radiation-doza/")
     st.link_button("3.3. Розрахунок часу перебування у зоні", "https://sergsh1125-dotcom.github.io/calculator-time/")
     st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКОВА ІНФОРМАЦІЯ</p>', unsafe_allow_html=True)
-    st.link_button("4.1. Метеообстановка", "https://www.meteo.gov.ua/")
-    st.link_button("4.2. Карта метеобстановки","https://www.windy.com/?47.446,30.223,6") 
+    st.link_button("4.1. Укргідрометеоцентр", "https://www.meteo.gov.ua/")
+    st.link_button("4.2. Карти Windy","https://www.windy.com/?47.446,30.223,6") 
     with st.expander("4.2. Методичні матеріали"):
         st.link_button("Управління РХБ захисту ДСНС", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
         st.link_button("Методичні рекомендації", "https://dsns.gov.ua/metodichni-rekomendaciyi")
         st.link_button("СОП Порядок проведення демеркуризації", "https://kyiv.dsns.gov.ua/upload/2/5/3/3/4/4/3/sop-demerkurizaciia-11-rxbz-dsns.pdf")
-        st.link_button("СОП Порядок дій пожежно-рятувальних підрозділів при залученні на НС, пов'язану з НХР", "https://kyiv.dsns.gov.ua/upload/2/5/3/3/4/4/4/sop-poriadok-dii-12-rxbz-dsns.pdf)")
+        st.link_button("СОП Порядок дій при залученні пожежно-рятувальних підрозділів на надзвичайну ситуацію, пов'язану з НХР", "https://kyiv.dsns.gov.ua/upload/2/5/3/3/4/4/4/sop-poriadok-dii-12-rxbz-dsns.pdf)")
