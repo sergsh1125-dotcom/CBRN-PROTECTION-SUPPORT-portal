@@ -237,7 +237,7 @@ with col_right:
 
 import os
 
-DOCS_FOLDER = "docx"
+DOCS_FOLDER = "docs"
 
 with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=False):
 
