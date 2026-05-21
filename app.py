@@ -235,22 +235,17 @@ with col_right:
 # 4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ
 # ===============================
 
+import os
+
 DOCS_FOLDER = "docx"
 
-show_docs = st.button(
-    "4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ",
-    use_container_width=True
-)
+with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=False):
 
-if show_docs:
-
-    st.markdown("### 📂 Файли DOCX")
-
-    if os.path.exists(DOCS_FOLDER):
+    if os.path.isdir(DOCS_FOLDER):
 
         doc_files = sorted([
             f for f in os.listdir(DOCS_FOLDER)
-            if f.endswith(".docx")
+            if f.lower().endswith(".docx")
         ])
 
         if doc_files:
@@ -267,7 +262,7 @@ if show_docs:
                         file_name=file_name,
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         use_container_width=True,
-                        key=file_name
+                        key=f"doc_{file_name}"
                     )
 
         else:
