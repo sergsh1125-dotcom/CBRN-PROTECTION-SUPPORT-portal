@@ -263,22 +263,55 @@ with col_right:
 
     # ----- Розділ модуля -----
     with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=False):
+        st.markdown("""
+        <style>
+        div[data-testid="stDownloadButton"] button {
+            font-size:6px !important;
+            padding:0px 3px !important;
+            min-height:20px !important;
+            border-radius:2px !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
-    st.markdown("""
-    <style>
-    div[data-testid="stDownloadButton"] button {
+    if os.path.isdir(DOCS_FOLDER):
 
-        font-size:6px !important;
+        allowed_extensions = (
+            ".docx",
+            ".pdf",
+            ".xlsx",
+            ".csv",
+            ".txt",
+            ".pptx"
+        )
 
-        padding:0px 3px !important;
+        doc_files = sorted([
+            f for f in os.listdir(DOCS_FOLDER)
+            if f.lower().endswith(allowed_extensions)
+        ])
 
-        min-height:20px !important;
+        if doc_files:
 
-        border-radius:2px !important;
+            for file_name in doc_files:
 
-    }
-    </style>
-    """, unsafe_allow_html=True)
+                file_path = os.path.join(DOCS_FOLDER, file_name)
+
+                with open(file_path, "rb") as file:
+
+                    st.download_button(
+                        label=f"📄 {file_name}",
+                        data=file,
+                        file_name=file_name,
+                        mime="application/octet-stream",
+                        use_container_width=True,
+                        key=f"doc_{file_name}"
+                    )
+
+        else:
+            st.warning("У папці docs немає файлів.")
+
+    else:
+        st.error("Папка docs не знайдена.")
 
         if os.path.isdir(DOCS_FOLDER):
 
