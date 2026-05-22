@@ -231,7 +231,7 @@ with col_right:
     st.link_button("4.1. Укргідрометеоцентр", "https://www.meteo.gov.ua/")
     st.link_button("4.2. Нормативно-правова база РХЗ", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
     st.link_button("4.3. СОП 1.1/РХБЗ: Демеркуризація\nСОП 1.2: Дії підрозділів при НС з НХР", "https://kyiv.dsns.gov.ua/navchalniy-centr-gu/sluzhbova-pidgotovka/normativno-pravovi-akti")
-    # ===============================
+   # ===============================
 # 4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ
 # ===============================
 
@@ -239,6 +239,29 @@ import os
 
 DOCS_FOLDER = "docs"
 
+# ----- Стиль кнопок документів -----
+st.markdown("""
+<style>
+div[data-testid="stDownloadButton"] > button {
+    background-color:#ffcc00 !important;
+    color:black !important;
+    border:none !important;
+    width:100% !important;
+    font-weight:bold !important;
+    font-size:11px !important;
+    border-radius:4px !important;
+    padding:8px 10px !important;
+    margin-bottom:5px !important;
+}
+
+div[data-testid="stDownloadButton"] > button:hover {
+    background-color:#ffd633 !important;
+    color:black !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ----- Розділ модуля -----
 with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=False):
 
     if os.path.isdir(DOCS_FOLDER):
@@ -266,7 +289,7 @@ with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=
                     )
 
         else:
-            st.warning("У папці docx немає файлів.")
+            st.warning("У папці docs немає файлів.")
 
     else:
-        st.error("Папка docx не знайдена.")
+        st.error("Папка docs не знайдена.")
