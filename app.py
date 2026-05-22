@@ -231,65 +231,66 @@ with col_right:
     st.link_button("4.1. Укргідрометеоцентр", "https://www.meteo.gov.ua/")
     st.link_button("4.2. Нормативно-правова база РХЗ", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
     st.link_button("4.3. СОП 1.1/РХБЗ: Демеркуризація\nСОП 1.2: Дії підрозділів при НС з НХР", "https://kyiv.dsns.gov.ua/navchalniy-centr-gu/sluzhbova-pidgotovka/normativno-pravovi-akti")
-   # ===============================
-# 4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ
-# ===============================
+    # ===============================
+    # 4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ
+    # ===============================
 
-import os
+    import os
 
-DOCS_FOLDER = "docs"
+    DOCS_FOLDER = "docs"
 
-# ----- Стиль кнопок документів -----
-st.markdown("""
-<style>
-div[data-testid="stDownloadButton"] > button {
-    background-color:#ffcc00 !important;
-    color:black !important;
-    border:none !important;
-    width:100% !important;
-    font-weight:bold !important;
-    font-size:11px !important;
-    border-radius:4px !important;
-    padding:8px 10px !important;
-    margin-bottom:5px !important;
-}
+    # ----- Стиль кнопок документів -----
+    st.markdown("""
+    <style>
+    div[data-testid="stDownloadButton"] > button {
+        background-color:#ffcc00 !important;
+        color:black !important;
+        border:none !important;
+        width:100% !important;
+        font-weight:bold !important;
+        font-size:11px !important;
+        border-radius:4px !important;
+        padding:8px 10px !important;
+        margin-bottom:5px !important;
+    }
 
-div[data-testid="stDownloadButton"] > button:hover {
-    background-color:#ffd633 !important;
-    color:black !important;
-}
-</style>
-""", unsafe_allow_html=True)
+    div[data-testid="stDownloadButton"] > button:hover {
+        background-color:#ffd633 !important;
+        color:black !important;
+   }
+    </style>
+    """, unsafe_allow_html=True)
 
-# ----- Розділ модуля -----
-with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=False):
+    # ----- Розділ модуля -----
+    with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=False):
 
-    if os.path.isdir(DOCS_FOLDER):
+        if os.path.isdir(DOCS_FOLDER):
 
-        doc_files = sorted([
-            f for f in os.listdir(DOCS_FOLDER)
-            if f.lower().endswith(".docx")
-        ])
+            doc_files = sorted([
+                f for f in os.listdir(DOCS_FOLDER)
+                if f.lower().endswith(".docx")
+            ])
 
-        if doc_files:
+            if doc_files:
 
-            for file_name in doc_files:
+                for file_name in doc_files:
 
-                file_path = os.path.join(DOCS_FOLDER, file_name)
+                    file_path = os.path.join(DOCS_FOLDER, file_name)
 
-                with open(file_path, "rb") as file:
+                    with open(file_path, "rb") as file:
 
-                    st.download_button(
-                        label=f"📄 {file_name}",
-                        data=file,
-                        file_name=file_name,
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        use_container_width=True,
-                        key=f"doc_{file_name}"
-                    )
+                        st.download_button(
+                            label=f"📄 {file_name}",
+                            data=file,
+                            file_name=file_name,
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            use_container_width=True,
+                            key=f"doc_{file_name}"
+                        )
+
+            else:
+                st.warning("У папці docs немає файлів.")
 
         else:
-            st.warning("У папці docs немає файлів.")
-
-    else:
-        st.error("Папка docs не знайдена.")
+            st.error("Папка docs не знайдена.")
+   
