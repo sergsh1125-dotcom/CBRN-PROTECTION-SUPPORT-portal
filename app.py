@@ -235,8 +235,6 @@ with col_right:
     # 4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ
     # ===============================
 
-    import os
-
     DOCS_FOLDER = "docs"
 
     # ----- Стиль кнопок документів -----
@@ -312,43 +310,4 @@ with col_right:
 
     else:
         st.error("Папка docs не знайдена.")
-
-        if os.path.isdir(DOCS_FOLDER):
-
-            allowed_extensions = (
-                ".docx",
-                ".pdf",
-                ".xlsx",
-                ".csv",
-                ".txt",
-                ".pptx"
-            )
-
-            doc_files = sorted([
-                f for f in os.listdir(DOCS_FOLDER)
-                if f.lower().endswith(allowed_extensions)
-            ])
-
-            if doc_files:
-
-                for file_name in doc_files:
-
-                    file_path = os.path.join(DOCS_FOLDER, file_name)
-
-                    with open(file_path, "rb") as file:
-
-                        st.download_button(
-                            label=f"📄 {file_name}",
-                            data=file,
-                            file_name=file_name,
-                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                            use_container_width=True,
-                            key=f"doc_{file_name}"
-                        )
-
-            else:
-                st.warning("У папці docs немає файлів.")
-
-        else:
-            st.error("Папка docs не знайдена.")
-   
+      
