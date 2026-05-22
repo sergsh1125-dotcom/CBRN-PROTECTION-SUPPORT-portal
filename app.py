@@ -248,7 +248,7 @@ with col_right:
         border:none !important;
         width:100% !important;
         font-weight:bold !important;
-        font-size:11px !important;
+        font-size:9px !important;
         border-radius:4px !important;
         padding:8px 10px !important;
         margin-bottom:5px !important;
