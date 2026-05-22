@@ -263,6 +263,22 @@ with col_right:
 
     # ----- Розділ модуля -----
     with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=False):
+        st.markdown("""
+        <style>
+        section[data-testid="stExpander"] div[data-testid="stDownloadButton"] > button {
+
+            font-size:8px !important;
+
+            padding:1px 4px !important;
+
+            min-height:24px !important;
+
+            line-height:1 !important;
+
+            margin-bottom:2px !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
         if os.path.isdir(DOCS_FOLDER):
 
