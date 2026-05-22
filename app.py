@@ -235,6 +235,8 @@ with col_right:
     # 4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ
     # ===============================
 
+    import os
+
     DOCS_FOLDER = "docs"
 
     # ----- Стиль кнопок документів -----
@@ -261,53 +263,43 @@ with col_right:
 
     # ----- Розділ модуля -----
     with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=False):
-        st.markdown("""
-        <style>
-        div[data-testid="stDownloadButton"] button {
-            font-size:6px !important;
-            padding:0px 3px !important;
-            min-height:20px !important;
-            border-radius:2px !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
 
-    if os.path.isdir(DOCS_FOLDER):
+        if os.path.isdir(DOCS_FOLDER):
 
-        allowed_extensions = (
-            ".docx",
-            ".pdf",
-            ".xlsx",
-            ".csv",
-            ".txt",
-            ".pptx"
-        )
+            allowed_extensions = (
+                ".docx",
+                ".pdf",
+                ".xlsx",
+                ".csv",
+                ".txt",
+                ".pptx"
+            )
 
-        doc_files = sorted([
-            f for f in os.listdir(DOCS_FOLDER)
-            if f.lower().endswith(allowed_extensions)
-        ])
+            doc_files = sorted([
+                f for f in os.listdir(DOCS_FOLDER)
+                if f.lower().endswith(allowed_extensions)
+            ])
 
-        if doc_files:
+            if doc_files:
 
-            for file_name in doc_files:
+                for file_name in doc_files:
 
-                file_path = os.path.join(DOCS_FOLDER, file_name)
+                    file_path = os.path.join(DOCS_FOLDER, file_name)
 
-                with open(file_path, "rb") as file:
+                    with open(file_path, "rb") as file:
 
-                    st.download_button(
-                        label=f"📄 {file_name}",
-                        data=file,
-                        file_name=file_name,
-                        mime="application/octet-stream",
-                        use_container_width=True,
-                        key=f"doc_{file_name}"
-                    )
+                        st.download_button(
+                            label=f"📄 {file_name}",
+                            data=file,
+                            file_name=file_name,
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            use_container_width=True,
+                            key=f"doc_{file_name}"
+                        )
+
+            else:
+                st.warning("У папці docs немає файлів.")
 
         else:
-            st.warning("У папці docs немає файлів.")
-
-    else:
-        st.error("Папка docs не знайдена.")
-      
+            st.error("Папка docs не знайдена.")
+   
