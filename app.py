@@ -266,9 +266,18 @@ with col_right:
 
         if os.path.isdir(DOCS_FOLDER):
 
+            allowed_extensions = (
+                ".docx",
+                ".pdf",
+                ".xlsx",
+                ".csv",
+                ".txt",
+                ".pptx"
+            )
+
             doc_files = sorted([
                 f for f in os.listdir(DOCS_FOLDER)
-                if f.lower().endswith(".docx")
+                if f.lower().endswith(allowed_extensions)
             ])
 
             if doc_files:
