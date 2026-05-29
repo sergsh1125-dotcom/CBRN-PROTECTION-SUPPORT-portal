@@ -262,7 +262,7 @@ with col_right:
     """, unsafe_allow_html=True)
 
     # ----- Розділ модуля -----
-    with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=False):
+    with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ ТА ДОВІДКОВІ МАТЕРІАЛИ", expanded=False):
 
         if os.path.isdir(DOCS_FOLDER):
 
