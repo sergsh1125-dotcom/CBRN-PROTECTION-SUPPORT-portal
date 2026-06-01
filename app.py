@@ -82,7 +82,7 @@ with col_left:
     st.link_button("1.2. Карта радіаційного моніторингу Укргідромету", "https://www.meteo.gov.ua/#RADIO")
     st.link_button("1.3. Карта радіаційного моніторингу країн ЄС", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
     st.link_button("1.4. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
-    st.link_button("1.5. Карта фактичної РХБ обстановки", "https://map-obstanovka-vuvukyx4vwu9jrhuv68vcg.streamlit.app/")
+    st.link_button("1.5. Карта фактичної РХ обстановки", "https://map-obstanovka-vuvukyx4vwu9jrhuv68vcg.streamlit.app/")
     st.info("💡 Координати на карті фактичної РХБ обстановки завантажуються кліком мишки.")
 
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
