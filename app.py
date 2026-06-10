@@ -91,7 +91,7 @@ with col_left:
 
 # -------- ЦЕНТР (КАРТА) --------
 with col_center:
-    with open("modules/map_engine_v2.html", "r", encoding="utf-8") as f:
+    with open("map/map_engine.html", "r", encoding="utf-8") as f:
         map_html = f.read()
 
     components.html(map_html, height=750)
