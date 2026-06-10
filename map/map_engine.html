@@ -1,320 +1,179 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8"/>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <style>
-#map {
-    height: 100vh;
-    width: 100%;
-}
+    body {
+        margin:0;
+        background:#0e1117;
+    }
 
-.label {
-    background: transparent;
-    border: none;
-    padding: 0;
+    #map {
+        height: 650px;
+        width: 100%;
+        border-radius: 8px;
+    }
 
-    display: inline-block;
-    white-space: normal;
+    .map-label {
+        background: rgba(255,255,255,0.9);
+        border: 1px solid black;
+        color: black;
+        font-weight: bold;
+        font-size: 11px;
+        padding: 2px 4px;
+        border-radius: 3px;
+    }
 
-    font-size: 13px;
-    font-weight: bold;
+    .toolbar {
+        display:grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap:5px;
+        margin-top:10px;
+    }
 
-    max-width: 500px;
-    text-align: center;
-    line-height: 1.3;
+    .btn {
+        padding:10px;
+        background:#ffcc00;
+        border:none;
+        font-weight:bold;
+        font-size:11px;
+        cursor:pointer;
+        border-radius:4px;
+    }
 
-    box-shadow: none;
-}
-
-#panel {
-    position:absolute;
-    top:10px;
-    right:10px;
-    z-index:9999;
-    background:white;
-    padding:10px;
-    border-radius:6px;
-    width:220px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.25);
-}
+    .btn:hover {
+        background:#ffd633;
+    }
 </style>
-
 </head>
 
 <body>
 
-<div id="panel">
+<div id="map"></div>
 
-<select id="symbolSelect">
-
-<option value="">-- умовні знаки --</option>
-
-<option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_radiation.svg">
-Точка виявлення радіоактивного забруднення
-</option>
-
-<option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_chemical.svg">
-Точка виявлення хімічного забруднення
-</option>
-
-<option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_biological.svg">
-Точка виявлення біологічного зараження
-</option>
-
-<option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/nuclear_blast.svg">
-Епіцентр ядерного вибуху
-</option>
-
-<option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/radioactive_site.svg">
-Радіаційно небезпечний об’єкт
-</option>
-
-<option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/chemical_hazard_site.svg">
-Хімічно небезпечний об’єкт
-</option>
-
-<option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/biological_hazard_site.svg">
-Біологічно небезпечний об’єкт
-</option>
-
-<option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/cbrn_recon_area.svg">
-Район РХБ розвідки
-</option>
-
-<option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/decon_area_special.svg">
-Район спеціальної обробки
-</option>
-
-<option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/decon_point_special.svg">
-Пункт спеціальної обробки
-</option>
-
-<option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/cbrn_post.svg">
-Пост радіаційного та хімічного спостереження
-</option>
-
-</select>
-
-<br><br>
-
-<button onclick="enableText()">Текст</button>
-<button onclick="disableMode()">ВИКЛ</button>
-<button onclick="clearAll()">Очистить</button>
-
+<div class="toolbar">
+    <button class="btn" onclick="addText()">ТЕКСТ</button>
+    <button class="btn" onclick="clearMap()">ОЧИСТИТЬ</button>
+    <button class="btn" onclick="downloadMap()">PNG</button>
+    <button class="btn" onclick="window.print()">PDF</button>
 </div>
 
-<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <script>
 
-let state = {
-    objects: [],
-    shapes: []
-};
-
-let map = L.map('map').setView([48.3, 31.1], 6);
+// =======================
+// 1. БАЗОВАЯ КАРТА
+// =======================
+var map = L.map('map', {
+    attributionControl:false
+}).setView([48.3794, 31.1656], 6);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19
+    crossOrigin: true
 }).addTo(map);
 
-// ---------------- LAYERS ----------------
-let drawnItems = new L.FeatureGroup();
+// =======================
+// 2. СЛОЙ ОБСТАНОВКИ
+// =======================
+var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
-// ---------------- DRAW CONTROL ----------------
-let drawControl = new L.Control.Draw({
+// =======================
+// 3. СТИЛИ
+// =======================
+var zoneStyle = {
+    color: 'black',
+    fillColor: 'yellow',
+    fillOpacity: 0.35,
+    weight: 2
+};
+
+var pointStyle = L.divIcon({
+    html: '<div style="background:#ffcc00;border:2px solid black;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;">☢️</div>',
+    className: ''
+});
+
+// =======================
+// 4. DRAW CONTROL
+// =======================
+var drawControl = new L.Control.Draw({
     draw: {
-        polygon: true,
-        rectangle: true,
-        circle: true,
-        polyline: true,
-        marker: false,
-        circlemarker: false
+        polygon: { shapeOptions: zoneStyle },
+        rectangle: { shapeOptions: zoneStyle },
+        circle: { shapeOptions: zoneStyle },
+        marker: { icon: pointStyle },
+        polyline: { shapeOptions: { color: 'black', weight: 3 } }
     },
     edit: {
         featureGroup: drawnItems
     }
 });
+
 map.addControl(drawControl);
 
-// ---------------- STATE ----------------
-function saveState() {
-    localStorage.setItem("cbrn_state", JSON.stringify(state));
-}
+// =======================
+// 5. СОЗДАНИЕ ОБЪЕКТОВ
+// =======================
+map.on(L.Draw.Event.CREATED, function(e) {
 
-function loadState() {
-    let saved = localStorage.getItem("cbrn_state");
-    if (saved) state = JSON.parse(saved);
-}
+    var layer = e.layer;
 
-function restoreShapes() {
-    drawnItems.clearLayers();
-
-    state.shapes.forEach(s => {
-        let layer = L.geoJSON(s.geojson, {
-            style: {
-    color: "black",
-    weight: 2,
-    fillColor: "yellow",
-    fillOpacity: 0.3
-}
-        });
-
-        drawnItems.addLayer(layer);
-    });
-}
-
-// ---------------- UI ----------------
-let selectedIcon = "";
-let textMode = false;
-
-document.getElementById("symbolSelect").onchange = function(e) {
-    selectedIcon = e.target.value;
-    textMode = false;
-};
-
-function enableText() {
-    textMode = true;
-    selectedIcon = "";
-}
-
-function disableMode() {
-    textMode = false;
-    selectedIcon = "";
-}
-
-function clearAll() {
-    state.objects = [];
-    state.shapes = [];
-    localStorage.removeItem("cbrn_state");
-    location.reload();
-}
-
-// ---------------- RENDER ----------------
-function render() {
-
-    map.eachLayer(layer => {
-        if (layer instanceof L.Marker) {
-            map.removeLayer(layer);
-        }
-    });
-
-    state.objects.forEach(obj => {
-
-        if (obj.type === "text") {
-
-            let marker = L.marker([obj.lat, obj.lng], {
-                icon: L.divIcon({
-                    className: "label",
-                    html: obj.text
-                })
-            }).addTo(map);
-
-            marker.on("click", function () {
-                state.objects = state.objects.filter(o =>
-                    !(o.type === "text" && o.lat === obj.lat && o.lng === obj.lng && o.text === obj.text)
-                );
-                saveState();
-                render();
-            });
-        }
-
-        if (obj.type === "symbol") {
-
-            let marker = L.marker([obj.lat, obj.lng], {
-                icon: L.icon({
-                    iconUrl: obj.icon,
-                    iconSize: [32, 32],
-                    iconAnchor: [16, 16]
-                })
-            }).addTo(map);
-
-            marker.on("click", function () {
-                state.objects = state.objects.filter(o =>
-                    !(o.type === "symbol" && o.lat === obj.lat && o.lng === obj.lng && o.icon === obj.icon)
-                );
-                saveState();
-                render();
-            });
-        }
-    });
-}
-
-// ---------------- MAP CLICK ----------------
-map.on("click", function(e) {
-// если сейчас используется инструмент рисования Leaflet.Draw,
-// не открываем ввод текста и не ставим символ
-if (
-    e.originalEvent &&
-    e.originalEvent.target &&
-    e.originalEvent.target.closest(".leaflet-draw-toolbar")
-) {
-    return;
-}
-   if (textMode && !selectedIcon) {
-        let txt = prompt("Введіть текст:");
-        if (!txt) return;
-
-        state.objects.push({
-            type: "text",
-            lat: e.latlng.lat,
-            lng: e.latlng.lng,
-            text: txt
-        });
-
-        saveState();
-        render();
-        textMode = false;
-        return;
-    }
-
-    if (!selectedIcon) return;
-
-    state.objects.push({
-        type: "symbol",
-        lat: e.latlng.lat,
-        lng: e.latlng.lng,
-        icon: selectedIcon
-    });
-
-    saveState();
-    render();
-});
-
-// ---------------- DRAW EVENTS ----------------
-map.on(L.Draw.Event.CREATED, function (e) {
-
-    let layer = e.layer;
-
-    // стиль фигур
+    // единый стиль для зон
     if (layer.setStyle) {
-        layer.setStyle({
-            color: "black",
-            weight: 2,
-            fillColor: "yellow",
-            fillOpacity: 0.3
-        });
+        layer.setStyle(zoneStyle);
     }
-
-    state.shapes.push({
-        id: Date.now(),
-        geojson: layer.toGeoJSON()
-    });
 
     drawnItems.addLayer(layer);
-    saveState();
 });
-// ---------------- INIT ----------------
-loadState();
-restoreShapes();
-render();
+
+// =======================
+// 6. ТЕКСТОВЫЕ МЕТКИ
+// =======================
+function addText() {
+    var text = prompt("Введите текст:");
+    if (!text) return;
+
+    map.once('click', function(e) {
+
+        var icon = L.divIcon({
+            html: '<div class="map-label">' + text + '</div>',
+            className: ''
+        });
+
+        L.marker(e.latlng, { icon: icon }).addTo(drawnItems);
+    });
+}
+
+// =======================
+// 7. ОЧИСТКА
+// =======================
+function clearMap() {
+    if (confirm("Очистить карту?")) {
+        drawnItems.clearLayers();
+    }
+}
+
+// =======================
+// 8. ЭКСПОРТ PNG
+// =======================
+function downloadMap() {
+
+    html2canvas(document.body, { useCORS:true, scale:2 }).then(canvas => {
+
+        var link = document.createElement("a");
+        link.download = "CBRN_map.png";
+        link.href = canvas.toDataURL();
+        link.click();
+
+    });
+}
 
 </script>
 
