@@ -27,7 +27,7 @@
         #map {
             height: 100%;
             width: 100%;
-            background: #e5e3df; /* Сірий фон-заглушка, якщо інтернет повільний */
+            background: #e5e3df;
         }
 
         /* --- СКИДАННЯ ДЕФОЛТНИХ СТИЛІВ LEAFLET ДЛЯ ТЕКСТУ --- */
@@ -210,14 +210,21 @@
         }
     }
 
-function restoreShapes() {
+    // Тимчасове деактивування стандартних інструментів малювання Leaflet.Draw
+    function deactivateDrawTools() {
+        if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) {
+            map._toolbars.draw._activeMode.handler.disable();
+        }
+    }
+
+    function restoreShapes() {
         if (!state.shapes) return;
         drawnItems.clearLayers();
 
         let ellipses = state.shapes.filter(s => s.isEllipse && s.radiusX && s.radiusY);
         let otherShapes = state.shapes.filter(s => !s.isEllipse || !s.radiusX || !s.radiusY);
 
-        // Сортуємо від найбільшого до найменшого, щоб червона зона лягала поверх жовтої
+        // Сортуємо еліпси за радіусом X (довжиною), щоб великі зони малювалися першими, а менші (темніші) перекривали їх зверху
         ellipses.sort((a, b) => b.radiusX - a.radiusX);
 
         // Малюємо інші фігури (кола, лінії)
@@ -240,15 +247,15 @@ function restoreShapes() {
             }
         });
 
-        // МАЛЮЄМО ЗОНИ ALOHA (СТАРТ З ТОЧКИ КЛІКУ + МЕТЕО-КУТ)
+        // МАЛЮЄМО ЗОНИ ALOHA ЗА МЕТЕОРОЛОГІЧНИМ НАПРЯМКОМ (СТАРТ З ТОЧКИ КЛІКУ / АВАРІЇ)
         ellipses.forEach((s, index) => {
             let points = [];
             let centerLat = s.ellipseCenter[0];
             let centerLng = s.ellipseCenter[1];
             
-            // Перетворення метеорологічного кута вітру (0 - дме з Півночі, хмара летить на Південь)
+            // Напрямок, звідки дме вітер (метеорологічний)
             let windRad = (s.tilt || 0) * Math.PI / 180;
-            let angleRad = windRad + Math.PI; // Розвертаємо хмару ЗА ВІТРОМ
+            let angleRad = windRad + Math.PI; // Розвертаємо хмару в протилежний бік (куди дме вітер)
 
             for (let i = 0; i < 64; i++) {
                 let angle = (i / 64) * 2 * Math.PI;
@@ -294,164 +301,26 @@ function restoreShapes() {
             }).addTo(drawnItems);
         });
     }
-    function enableText() { textMode = true; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
-   function enableEllipseMode() { ellipseMode = true; textMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; alert("Режим еліпса активовано! Клікніть на карті в точці аварії (джерело зараження), щоб нанести початок зони."); }
-    function disableMode() { textMode = false; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
-    
-    function clearAll() {
-        if(confirm("Очистити всю обстановку на карті?")) {
-            state = { objects: [], shapes: [] };
-            localStorage.removeItem("cbrn_state");
-            location.reload();
-        }
-    }
 
-    let markersGroup = L.layerGroup().addTo(map);
-
-    function render() {
-        markersGroup.clearLayers();
-        if (!state.objects) return;
-
-        state.objects.forEach((obj, index) => {
-            let marker;
-            if (obj.type === "text") {
-                marker = L.marker([obj.lat, obj.lng], {
-                    icon: L.divIcon({ 
-                        className: "cbrn-text-container", 
-                        html: `<span style="display: inline-block; white-space: nowrap; font-size: 14px; font-weight: bold; color: #000000 !important; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff !important;">${obj.text}</span>`,
-                        iconSize: null,       
-                        iconAnchor: [10, 10]  
-                    })
-                });
-            } else if (obj.type === "symbol" && obj.icon) {
-                marker = L.marker([obj.lat, obj.lng], {
-                    icon: L.icon({ iconUrl: obj.icon, iconSize: [32, 32], iconAnchor: [16, 16] })
-                });
-            }
-
-            if (marker) {
-                marker.addTo(markersGroup);
-                marker.on("click", function(e) {
-                    L.DomEvent.stopPropagation(e);
-                    state.objects.splice(index, 1);
-                    saveState();
-                    render();
-                });
-            }
-        });
-    }
-
-map.on("click", function(e) {
-        // Дозволяємо клік, якщо активовано знаки, текст або еліпс, 
-        // в інших випадках (стандартне малювання Leaflet.Draw) — ігноруємо.
-        if (!textMode && !ellipseMode && !selectedIcon) {
-            if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) return;
-        }
-
-        // 1. РЕЖИМ ОПЕРАТИВНОГО ТЕКСТУ
-        if (textMode) {
-            let txt = prompt("Введіть оперативно-тактичний підпис:");
-            if (!txt) return;
-            state.objects.push({ type: "text", lat: e.latlng.lat, lng: e.latlng.lng, text: txt });
-            saveState();
-            render();
-            textMode = false;
-            return;
-        }
-
-        // 2. РЕЖИМ ТАКТИЧНИХ ЗОН ALOHA (ЕЛІПС)
-        if (ellipseMode) {
-            let rX = prompt("Введіть довжину зони (радіус X за вітром) в метрах:", "5000");
-            if (!rX) return;
-            let rY = prompt("Введіть ширину зони (радіус Y бокове поширення) в метрах:", "2000");
-            if (!rY) return;
-            
-            let windInputVal = document.getElementById("windInput").value;
-            let angle = windInputVal !== "" ? parseFloat(windInputVal) : 0;
-
-            state.shapes.push({
-                id: Date.now(),
-                isCircle: false,
-                isEllipse: true,
-                ellipseCenter: [e.latlng.lat, e.latlng.lng], 
-                radiusX: parseFloat(rX),
-                radiusY: parseFloat(rY),
-                tilt: angle
-            });
-
-            saveState();
-            restoreShapes();
-            ellipseMode = false;
-            return;
-        }
-
-        // 3. РЕЖИМ НАНЕСЕННЯ УМОВНИХ ЗНАКІВ РХБЗ
+    document.getElementById("symbolSelect").onchange = function(e) {
+        selectedIcon = e.target.value;
+        textMode = false;
+        ellipseMode = false;
         if (selectedIcon) {
-            state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
-            saveState();
-            render();
-            // За бажанням можна розкоментувати рядок нижче, щоб знак скидався після одного виставлення:
-            // selectedIcon = ""; document.getElementById("symbolSelect").value = "";
+            deactivateDrawTools(); // Звільняємо мапу від інструментів малювання Leaflet.Draw
         }
-    });
-    map.on(L.Draw.Event.CREATED, function (e) {
-        let layer = e.layer;
-        let type = e.layerType;
+    };
 
-        if (layer.setStyle) {
-            layer.setStyle({ color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
-        }
-
-        let shapeData = {
-            id: Date.now(),
-            geojson: layer.toGeoJSON(),
-            isCircle: false,
-            isEllipse: false
-        };
-
-        if (typeof layer.getRadius === 'function' && type !== 'ellipse') {
-            shapeData.isCircle = true;
-            shapeData.circleRadius = layer.getRadius();
-            let latlng = layer.getLatLng();
-            shapeData.circleCenter = [latlng.lat, latlng.lng];
-        }
-
-        state.shapes.push(shapeData);
-        drawnItems.addLayer(layer);
-        saveState();
-    });
-
-    function exportPNG() {
-        const area = document.getElementById("capture_area");
-        document.getElementById("panel").style.display = "none";
-        
-        html2canvas(area, { useCORS: true, allowTaint: true, scale: 2 }).then(function(canvas) {
-            const link = document.createElement("a");
-            link.download = `CBRN_Map_SITREP_${Date.now()}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-            document.getElementById("panel").style.display = "block";
-        });
+    function enableText() { 
+        textMode = true; 
+        ellipseMode = false; 
+        selectedIcon = ""; 
+        document.getElementById("symbolSelect").value = ""; 
+        deactivateDrawTools(); 
     }
-
-    function setWindDirection(deg) {
-        let visualAngle = (deg + 180) % 360;
-        document.getElementById("windArrow").style.transform = `rotate(${visualAngle}deg)`;
-        document.getElementById("windDeg").innerText = deg + "°";
-    }
-
-    function applyWind() {
-        let val = document.getElementById("windInput").value;
-        if (val === "" || isNaN(val)) return;
-        let deg = parseInt(val);
-        deg = ((deg % 360) + 360) % 360;
-        setWindDirection(deg);
-    }
-
-    loadState();
-    restoreShapes();
-    render();
-    setWindDirection(0);
-</script>
-</body>
-</html>
+    
+    function enableEllipseMode() { 
+        ellipseMode = true; 
+        textMode = false; 
+        selectedIcon = ""; 
+        document.getElementById("symbolSelect").value = "";
