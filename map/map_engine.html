@@ -7,10 +7,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/leaflet-draw-ellipse@1.0.2/dist/leaflet.draw.ellipse.min.js"></script>
 
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
@@ -40,26 +38,25 @@
 
         /* --- СТИЛЬ НАПИСІВ НА КАРТІ --- */
         .label {
-            background: transparent !important; /* Повністю прозоре поле під написом */
-            border: none !important;             /* Без рамок */
-            box-shadow: none !important;         /* Без тіней від блоку */
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
             padding: 0 !important;
             display: inline-block;
             white-space: nowrap;
             width: max-content;
-            font-size: 14px;                     /* Напис став чіткішим */
+            font-size: 14px;
             font-weight: bold;
-            color: #ffcc00 !important;           /* Жовтий оперативно-тактичний колір під стиль вашого Офісу */
+            color: #000000 !important; /* Чорний оперативно-тактичний колір */
             text-align: center;
             line-height: 1.3;
             
-            /* Чорне контурне обведення літер, щоб текст ідеально читався на будь-якій підкладці карти */
+            /* Біле контурне обведення літер для ідеального читання */
             text-shadow: 
-                1px  1px 0px #000, 
-               -1px -1px 0px #000, 
-                1px -1px 0px #000, 
-               -1px  1px 0px #000,
-                0px  2px 3px #000; 
+                1px  1px 0px #fff, 
+               -1px -1px 0px #fff, 
+                1px -1px 0px #fff, 
+               -1px  1px 0px #fff !important;
         }
 
         /* Панель інструментів (правий верхній кут) */
@@ -87,7 +84,7 @@
             box-sizing: border-box;
         }
         #panel button {
-            width: 31%;
+            width: 23%;
             padding: 6px 2px;
             margin-bottom: 5px;
             background: #444;
@@ -163,11 +160,12 @@
             <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/biological_hazard_site.svg">Біологічно небезпечний об’єкт</option>
             <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/cbrn_recon_area.svg">Район РХБ розвідки</option>
             <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/decon_area_special.svg">Район спецобробки</option>
-            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/cbrn_post.svg">Пост спостереження РХБ</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-post.svg">Пост спостереження РХБ</option>
         </select>
 
         <div class="btn-group">
             <button onclick="enableText()">Текст</button>
+            <button style="background:#5c3a21; color:#fff;" onclick="enableEllipseMode()">Еліпс</button>
             <button onclick="disableMode()">ВИКЛ</button>
             <button style="background:#8b0000;" onclick="clearAll()">Очистити</button>
         </div>
@@ -195,6 +193,7 @@
     let state = { objects: [], shapes: [] };
     let selectedIcon = "";
     let textMode = false;
+    let ellipseMode = false;
 
     // Ініціалізація карти
     let map = L.map('map').setView([48.3, 31.1], 6);
@@ -203,17 +202,15 @@
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Шар для геометричних фігур (Leaflet.Draw)
+    // Шар для геометричних фігур (Leaflet.Draw + Еліпси)
     let drawnItems = new L.FeatureGroup().addTo(map);
 
-    // Конфігурація...
-   // Конфігурація панелі малювання (ОНОВЛЕНО)
+    // Конфігурація панелі малювання (Повернено до стабільної роботи без багів)
     let drawControl = new L.Control.Draw({
         draw: {
             polygon: true,
             rectangle: true,
             circle: true,
-            ellipse: true, // Тепер на панелі з'явиться кнопка для малювання еліпса!
             polyline: true,
             marker: false,
             circlemarker: false
@@ -222,6 +219,7 @@
     }).addTo(map);
 
     function saveState() { localStorage.setItem("cbrn_state", JSON.stringify(state)); }
+    
     function loadState() {
         let saved = localStorage.getItem("cbrn_state");
         if (saved) state = JSON.parse(saved);
@@ -230,19 +228,47 @@
     function restoreShapes() {
         drawnItems.clearLayers();
         state.shapes.forEach(s => {
-            // Перевіряємо, чи це було збережене коло
+            // 1. Відновлення кола
             if (s.isCircle && s.circleRadius) {
-                let coords = s.geojson.geometry.coordinates;
-                // Перевертаємо координати з GeoJSON [lng, lat] назад у Leaflet [lat, lng]
-                L.circle([coords[1], coords[0]], {
+                let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
+                L.circle(center, {
                     radius: s.circleRadius,
                     color: "black",
                     weight: 2,
                     fillColor: "yellow",
                     fillOpacity: 0.3
                 }).addTo(drawnItems);
+                
+            // 2. АЛГОРИТМ МАЛЮВАННЯ ТА ВІДНОВЛЕННЯ ЕЛІПСА
+            } else if (s.isEllipse && s.radiusX && s.radiusY) {
+                let points = [];
+                let centerLat = s.ellipseCenter[0];
+                let centerLng = s.ellipseCenter[1];
+                let tiltRad = (s.tilt || 0) * Math.PI / 180;
+
+                for (let i = 0; i < 64; i++) {
+                    let angle = (i / 64) * 2 * Math.PI;
+                    let dx = s.radiusX * Math.cos(angle);
+                    let dy = s.radiusY * Math.sin(angle);
+
+                    let rotatedDx = dx * Math.cos(tiltRad) - dy * Math.sin(tiltRad);
+                    let rotatedDy = dx * Math.sin(tiltRad) + dy * Math.cos(tiltRad);
+
+                    let latOffset = rotatedDy / 111320;
+                    let lngOffset = rotatedDx / (111320 * Math.cos(centerLat * Math.PI / 180));
+
+                    points.push([centerLat + latOffset, centerLng + lngOffset]);
+                }
+
+                L.polygon(points, {
+                    color: "black",
+                    weight: 2,
+                    fillColor: "yellow",
+                    fillOpacity: 0.3
+                }).addTo(drawnItems);
+
+            // 3. Відновлення інших фігур (полігони, лінії)
             } else {
-                // Для всіх інших фігур (полігони, прямокутники, лінії) залишаємо стандартний метод
                 L.geoJSON(s.geojson, {
                     style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 }
                 }).eachLayer(layer => {
@@ -255,9 +281,12 @@
     document.getElementById("symbolSelect").onchange = function(e) {
         selectedIcon = e.target.value;
         textMode = false;
+        ellipseMode = false;
     };
-    function enableText() { textMode = true; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
-    function disableMode() { textMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
+    
+    function enableText() { textMode = true; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
+    function enableEllipseMode() { ellipseMode = true; textMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; alert("Режим еліпса активовано! Клікніть на карті, де розташований центр зони."); }
+    function disableMode() { textMode = false; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
     
     function clearAll() {
         if(confirm("Очистити всю обстановку на карті?")) {
@@ -275,18 +304,16 @@
 
         state.objects.forEach((obj, index) => {
             let marker;
-          if (obj.type === "text") {
-            marker = L.marker([obj.lat, obj.lng], {
-                icon: L.divIcon({ 
-                    className: "cbrn-text-container", 
-                    // color змінено на #000000 (чорний), text-shadow змінено на #ffffff (білий контур)
-                    html: `<span style="background: transparent !important; border: none !important; box-shadow: none !important; display: inline-block; white-space: nowrap; font-size: 14px; font-weight: bold; color: #000000 !important; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff !important;">${obj.text}</span>`,
-                    iconSize: null,       
-                    iconAnchor: [10, 10]  
-                })
-            });
-        }
-            else if (obj.type === "symbol") {
+            if (obj.type === "text") {
+                marker = L.marker([obj.lat, obj.lng], {
+                    icon: L.divIcon({ 
+                        className: "cbrn-text-container", 
+                        html: `<span style="background: transparent !important; border: none !important; box-shadow: none !important; display: inline-block; white-space: nowrap; font-size: 14px; font-weight: bold; color: #000000 !important; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff !important;">${obj.text}</span>`,
+                        iconSize: null,       
+                        iconAnchor: [10, 10]  
+                    })
+                });
+            } else if (obj.type === "symbol") {
                 marker = L.marker([obj.lat, obj.lng], {
                     icon: L.icon({ iconUrl: obj.icon, iconSize: [32, 32], iconAnchor: [16, 16] })
                 });
@@ -295,104 +322,4 @@
             if (marker) {
                 marker.addTo(markersGroup);
                 marker.on("click", function(e) {
-                    L.DomEvent.stopPropagation(e);
-                    state.objects.splice(index, 1);
-                    saveState();
-                    render();
-                });
-            }
-        });
-    }
-
-    // Обробка кліку по карті
-    map.on("click", function(e) {
-        if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) return;
-
-        if (textMode) {
-            let txt = prompt("Введіть оперативно-тактичний підпис:");
-            if (!txt) return;
-            state.objects.push({ type: "text", lat: e.latlng.lat, lng: e.latlng.lng, text: txt });
-            saveState();
-            render();
-            textMode = false;
-            return;
-        }
-
-        if (selectedIcon) {
-            state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
-            saveState();
-            render();
-        }
-    });
-
-  // Збереження геометрії Leaflet.Draw (з підтримкою Еліпсів)
-    map.on(L.Draw.Event.CREATED, function (e) {
-        let layer = e.layer;
-        let type = e.layerType; // Отримуємо точний тип фігури від плагіна
-
-        if (layer.setStyle) {
-            layer.setStyle({ color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
-        }
-
-        let shapeData = {
-            id: Date.now(),
-            geojson: layer.toGeoJSON(),
-            isCircle: false,
-            isEllipse: false
-        };
-
-        // НАДІЙНА ПЕРЕВІРКА КОЛА
-        if (typeof layer.getRadius === 'function' && type !== 'ellipse') {
-            shapeData.isCircle = true;
-            shapeData.circleRadius = layer.getRadius();
-            let latlng = layer.getLatLng();
-            shapeData.circleCenter = [latlng.lat, latlng.lng];
-        }
-
-        // ОБРОБКА ТА ЗБЕРЕЖЕННЯ ЕЛІПСА
-        if (type === 'ellipse' || typeof layer.getRadiusX === 'function') {
-            shapeData.isEllipse = true;
-            let latlng = layer.getLatLng();
-            shapeData.ellipseCenter = [latlng.lat, latlng.lng];
-            shapeData.radiusX = layer.getRadiusX(); // Горизонтальна вісь
-            shapeData.radiusY = layer.getRadiusY(); // Вертикальна вісь
-            shapeData.tilt = layer.getTilt ? layer.getTilt() : 0; // Кут повороту хмари
-        }
-
-        state.shapes.push(shapeData);
-        drawnItems.addLayer(layer);
-        saveState();
-    });    function exportPNG() {
-        const area = document.getElementById("capture_area");
-        document.getElementById("panel").style.display = "none";
-        
-        html2canvas(area, { useCORS: true, allowTaint: true, scale: 2 }).then(function(canvas) {
-            const link = document.createElement("a");
-            link.download = `CBRN_Map_SITREP_${Date.now()}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-            document.getElementById("panel").style.display = "block";
-        });
-    }
-
-    function setWindDirection(deg) {
-        let visualAngle = (deg + 180) % 360;
-        document.getElementById("windArrow").style.transform = `rotate(${visualAngle}deg)`;
-        document.getElementById("windDeg").innerText = deg + "°";
-    }
-
-    function applyWind() {
-        let val = document.getElementById("windInput").value;
-        if (val === "" || isNaN(val)) return;
-        let deg = parseInt(val);
-        deg = ((deg % 360) + 360) % 360;
-        setWindDirection(deg);
-    }
-
-    loadState();
-    restoreShapes();
-    render();
-    setWindDirection(0);
-</script>
-</body>
-</html>
+                    L.DomEvent.stopPropagation
