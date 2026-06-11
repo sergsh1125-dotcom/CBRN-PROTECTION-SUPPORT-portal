@@ -226,11 +226,25 @@
     function restoreShapes() {
         drawnItems.clearLayers();
         state.shapes.forEach(s => {
-            L.geoJSON(s.geojson, {
-                style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 }
-            }).eachLayer(layer => {
-                drawnItems.addLayer(layer);
-            });
+            // Перевіряємо, чи це було збережене коло
+            if (s.isCircle && s.circleRadius) {
+                let coords = s.geojson.geometry.coordinates;
+                // Перевертаємо координати з GeoJSON [lng, lat] назад у Leaflet [lat, lng]
+                L.circle([coords[1], coords[0]], {
+                    radius: s.circleRadius,
+                    color: "black",
+                    weight: 2,
+                    fillColor: "yellow",
+                    fillOpacity: 0.3
+                }).addTo(drawnItems);
+            } else {
+                // Для всіх інших фігур (полігони, прямокутники, лінії) залишаємо стандартний метод
+                L.geoJSON(s.geojson, {
+                    style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 }
+                }).eachLayer(layer => {
+                    drawnItems.addLayer(layer);
+                });
+            }
         });
     }
 
@@ -307,12 +321,29 @@
         }
     });
 
+    // Збереження геометрії Leaflet.Draw
     map.on(L.Draw.Event.CREATED, function (e) {
         let layer = e.layer;
+        let type = e.layerType; // Отримуємо тип намальованої фігури
+
         if (layer.setStyle) {
             layer.setStyle({ color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
         }
-        state.shapes.push({ id: Date.now(), geojson: layer.toGeoJSON() });
+
+        // Створюємо базову структуру для збереження
+        let shapeData = {
+            id: Date.now(),
+            geojson: layer.toGeoJSON(),
+            isCircle: false
+        };
+
+        // Якщо намальовано саме коло, додатково зберігаємо його радіус
+        if (type === 'circle' || layer instanceof L.Circle) {
+            shapeData.isCircle = true;
+            shapeData.circleRadius = layer.getRadius();
+        }
+
+        state.shapes.push(shapeData);
         drawnItems.addLayer(layer);
         saveState();
     });
