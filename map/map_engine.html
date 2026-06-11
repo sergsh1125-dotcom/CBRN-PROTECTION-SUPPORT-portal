@@ -210,18 +210,17 @@
         }
     }
 
- function restoreShapes() {
+function restoreShapes() {
         if (!state.shapes) return;
         drawnItems.clearLayers();
 
-        // 1. Відокремлюємо еліпси для тактичного сортування та градації
         let ellipses = state.shapes.filter(s => s.isEllipse && s.radiusX && s.radiusY);
         let otherShapes = state.shapes.filter(s => !s.isEllipse || !s.radiusX || !s.radiusY);
 
-        // Сортуємо еліпси від найбільшого до найменшого
+        // Сортуємо від найбільшого до найменшого, щоб червона зона лягала поверх жовтої
         ellipses.sort((a, b) => b.radiusX - a.radiusX);
 
-        // 2. Малюємо інші фігури
+        // Малюємо інші фігури (кола, лінії)
         otherShapes.forEach(s => {
             if (s.isCircle && s.circleRadius) {
                 let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
@@ -241,17 +240,15 @@
             }
         });
 
-        // 3. МАЛЮЄМО ЕЛІПС ЗА НАПРЯМКОМ МЕТЕОРОЛОГІЧНОГО ВІТРУ
+        // МАЛЮЄМО ЗОНИ ALOHA (СТАРТ З ТОЧКИ КЛІКУ + МЕТЕО-КУТ)
         ellipses.forEach((s, index) => {
             let points = [];
             let centerLat = s.ellipseCenter[0];
             let centerLng = s.ellipseCenter[1];
             
-            // Базовий тактичний кут вітру переводимо в радіани
+            // Перетворення метеорологічного кута вітру (0 - дме з Півночі, хмара летить на Південь)
             let windRad = (s.tilt || 0) * Math.PI / 180;
-            
-            // МЕТЕО-РОЗВЕРТКА: Додаємо Math.PI (180°), щоб хмара летіла НАЗАД від напрямку вітру
-            let angleRad = windRad + Math.PI; 
+            let angleRad = windRad + Math.PI; // Розвертаємо хмару ЗА ВІТРОМ
 
             for (let i = 0; i < 64; i++) {
                 let angle = (i / 64) * 2 * Math.PI;
@@ -259,7 +256,7 @@
                 let x = s.radiusY * Math.cos(angle); 
                 let y = s.radiusX * Math.sin(angle); 
 
-                // Зміщення +s.radiusX виштовхує еліпс вперед, залишаючи точку кліку на початку хмари
+                // Математичний виштовх усього тіла еліпса вперед, фіксуючи точку аварії на старті
                 let rotatedDx = x * Math.cos(angleRad) + (y + s.radiusX) * Math.sin(angleRad);
                 let rotatedDy = -x * Math.sin(angleRad) + (y + s.radiusX) * Math.cos(angleRad);
 
@@ -269,24 +266,35 @@
                 points.push([centerLat + latOffset, centerLng + lngOffset]);
             }
 
-            // Налаштування градації прозорості (Зона 3, 2, 1)
-            let opacity = 0.3; 
+            // Динамічне фарбування за стандартом ALOHA (залежно від довжини в наборі з 3-х еліпсів)
+            let zoneColor = "#ffcc00"; // Жовтий за замовчуванням (Зона 3)
+            let zoneOpacity = 0.3;
+
             if (ellipses.length === 2) {
-                opacity = (index === 0) ? 0.25 : 0.6;
+                zoneColor = (index === 0) ? "#ff9900" : "#cc0000"; // Помаранчевий та Червоний
+                zoneOpacity = (index === 0) ? 0.35 : 0.55;
             } else if (ellipses.length >= 3) {
-                if (index === 0) opacity = 0.20;       // Зона 3 (найсвітліша)
-                else if (index === 1) opacity = 0.45;  // Зона 2 (середня)
-                else opacity = 0.75;                   // Зона 1 (найгустіша)
+                if (index === 0) { 
+                    zoneColor = "#ffcc00"; // Найдовший (Зона 3) - Жовтий
+                    zoneOpacity = 0.25;
+                } else if (index === 1) { 
+                    zoneColor = "#ff9900"; // Середній (Зона 2) - Помаранчевий
+                    zoneOpacity = 0.45;
+                } else { 
+                    zoneColor = "#cc0000"; // Найкоротший (Зона 1) - Червоний епіцентр
+                    zoneOpacity = 0.65;
+                }
             }
 
             L.polygon(points, {
-                color: "black",
+                color: zoneColor == "#cc0000" ? "#8b0000" : "black", // Темна межа для епіцентру
                 weight: 2,
-                fillColor: "#ffcc00",
-                fillOpacity: opacity
+                fillColor: zoneColor,
+                fillOpacity: zoneOpacity
             }).addTo(drawnItems);
         });
-    }    function enableText() { textMode = true; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
+    }
+    function enableText() { textMode = true; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
     function enableEllipseMode() { ellipseMode = true; textMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; alert("Режим еліпса активовано! Клікніть на карті, де розташований центр зони."); }
     function disableMode() { textMode = false; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
     
@@ -333,7 +341,7 @@
         });
     }
 
-  map.on("click", function(e) {
+ map.on("click", function(e) {
         if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) return;
 
         if (textMode) {
@@ -346,28 +354,29 @@
             return;
         }
 
-        // ОНОВЛЕНИЙ РЕЖИМ ТАКТИЧНОГО ЕЛІПСА
+        // РЕЖИМ ТАКТИЧНИХ ЗОН ALOHA
         if (ellipseMode) {
             let rX = prompt("Введіть довжину зони (радіус X за вітром) в метрах:", "5000");
             if (!rX) return;
             let rY = prompt("Введіть ширину зони (радіус Y бокове поширення) в метрах:", "2000");
             if (!rY) return;
-            let angle = prompt("Введіть кут повороту хмари (в градусах, від 0 до 360):", "0");
-            if (angle === null) return;
+            
+            // АВТОМАТИЧНО беремо кут з вашого віджета вітру!
+            let windInputVal = document.getElementById("windInput").value;
+            let angle = windInputVal !== "" ? parseFloat(windInputVal) : 0;
 
-            // ЗБЕРІГАЄМО ТОЧКУ КЛІКУ ЯК СТАРТОВУ ТОЧКУ ХМАРИ
             state.shapes.push({
                 id: Date.now(),
                 isCircle: false,
                 isEllipse: true,
-                ellipseCenter: [e.latlng.lat, e.latlng.lng], // Тепер це початок довгої осі
+                ellipseCenter: [e.latlng.lat, e.latlng.lng], // Точка аварії
                 radiusX: parseFloat(rX),
                 radiusY: parseFloat(rY),
-                tilt: parseFloat(angle)
+                tilt: angle
             });
 
             saveState();
-            restoreShapes(); // Перемальовуємо карту з урахуванням нового еліпса
+            restoreShapes();
             ellipseMode = false;
             return;
         }
@@ -377,8 +386,7 @@
             saveState();
             render();
         }
-    });
-    map.on(L.Draw.Event.CREATED, function (e) {
+    });    map.on(L.Draw.Event.CREATED, function (e) {
         let layer = e.layer;
         let type = e.layerType;
 
