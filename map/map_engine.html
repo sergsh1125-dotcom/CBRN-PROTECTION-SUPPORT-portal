@@ -107,7 +107,32 @@
         height: 100vh !important;
     }
 }
+#windWidget {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    z-index: 9999;
 
+    background: rgba(0,0,0,0.65);
+    color: #FFD600;
+
+    padding: 8px 10px;
+    border-radius: 8px;
+
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.wind-arrow {
+    font-size: 22px;
+    transition: transform 0.4s ease;
+}
+
+.wind-deg {
+    font-size: 11px;
+    margin-top: 2px;
+}
 </style>
 
 </head>
@@ -404,7 +429,21 @@ function exportPNG() {
     });
 
 }
-</script>
+function setWindDirection(deg) {
+    // важно: "откуда дует"
+    // значит стрелка смотрит В ПРОТИВОПОЛОЖНУЮ сторону
+    let visualAngle = (deg + 180) % 360;
 
+    document.getElementById("windArrow").style.transform =
+        `rotate(${visualAngle}deg)`;
+
+    document.getElementById("windDeg").innerText = deg + "°";
+}
+</script>
+<div id="windWidget">
+    <div class="wind-title">Вітер</div>
+    <div class="wind-arrow" id="windArrow">↑</div>
+    <div class="wind-deg" id="windDeg">0°</div>
+</div>
 </body>
 </html>
