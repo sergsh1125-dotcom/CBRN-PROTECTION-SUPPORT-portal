@@ -27,6 +27,7 @@
         #map {
             height: 100%;
             width: 100%;
+            background: #e5e3df; /* Сірий фон-заглушка, якщо інтернет повільний */
         }
 
         /* --- СКИДАННЯ ДЕФОЛТНИХ СТИЛІВ LEAFLET ДЛЯ ТЕКСТУ --- */
@@ -34,29 +35,6 @@
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-        }
-
-        /* --- СТИЛЬ НАПИСІВ НА КАРТІ --- */
-        .label {
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            display: inline-block;
-            white-space: nowrap;
-            width: max-content;
-            font-size: 14px;
-            font-weight: bold;
-            color: #000000 !important; /* Чорний оперативно-тактичний колір */
-            text-align: center;
-            line-height: 1.3;
-            
-            /* Біле контурне обведення літер для ідеального читання */
-            text-shadow: 
-                1px  1px 0px #fff, 
-               -1px -1px 0px #fff, 
-                1px -1px 0px #fff, 
-               -1px  1px 0px #fff !important;
         }
 
         /* Панель інструментів (правий верхній кут) */
@@ -135,7 +113,6 @@
         }
         .wind-deg { font-size: 12px; font-weight: bold; }
 
-        /* Режим друку */
         @media print {
             #panel { display: none !important; }
             #windWidget { border: 1px solid #000; color: #000; background: white; }
@@ -160,7 +137,7 @@
             <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/biological_hazard_site.svg">Біологічно небезпечний об’єкт</option>
             <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/cbrn_recon_area.svg">Район РХБ розвідки</option>
             <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/decon_area_special.svg">Район спецобробки</option>
-            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-post.svg">Пост спостереження РХБ</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/cbrn_post.svg">Пост спостереження РХБ</option>
         </select>
 
         <div class="btn-group">
@@ -202,10 +179,10 @@
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Шар для геометричних фігур (Leaflet.Draw + Еліпси)
+    // Шар для геометричних фігур
     let drawnItems = new L.FeatureGroup().addTo(map);
 
-    // Конфігурація панелі малювання (Повернено до стабільної роботи без багів)
+    // Конфігурація панелі малювання
     let drawControl = new L.Control.Draw({
         draw: {
             polygon: true,
@@ -222,13 +199,21 @@
     
     function loadState() {
         let saved = localStorage.getItem("cbrn_state");
-        if (saved) state = JSON.parse(saved);
+        if (saved) {
+            try {
+                state = JSON.parse(saved);
+                if (!state.objects) state.objects = [];
+                if (!state.shapes) state.shapes = [];
+            } catch(e) {
+                state = { objects: [], shapes: [] };
+            }
+        }
     }
 
     function restoreShapes() {
+        if (!state.shapes) return;
         drawnItems.clearLayers();
         state.shapes.forEach(s => {
-            // 1. Відновлення кола
             if (s.isCircle && s.circleRadius) {
                 let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
                 L.circle(center, {
@@ -239,7 +224,6 @@
                     fillOpacity: 0.3
                 }).addTo(drawnItems);
                 
-            // 2. АЛГОРИТМ МАЛЮВАННЯ ТА ВІДНОВЛЕННЯ ЕЛІПСА
             } else if (s.isEllipse && s.radiusX && s.radiusY) {
                 let points = [];
                 let centerLat = s.ellipseCenter[0];
@@ -267,8 +251,7 @@
                     fillOpacity: 0.3
                 }).addTo(drawnItems);
 
-            // 3. Відновлення інших фігур (полігони, лінії)
-            } else {
+            } else if (s.geojson) {
                 L.geoJSON(s.geojson, {
                     style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 }
                 }).eachLayer(layer => {
@@ -296,11 +279,11 @@
         }
     }
 
-    // Рендеринг маркерів та тексту
     let markersGroup = L.layerGroup().addTo(map);
 
     function render() {
         markersGroup.clearLayers();
+        if (!state.objects) return;
 
         state.objects.forEach((obj, index) => {
             let marker;
@@ -308,12 +291,12 @@
                 marker = L.marker([obj.lat, obj.lng], {
                     icon: L.divIcon({ 
                         className: "cbrn-text-container", 
-                        html: `<span style="background: transparent !important; border: none !important; box-shadow: none !important; display: inline-block; white-space: nowrap; font-size: 14px; font-weight: bold; color: #000000 !important; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff !important;">${obj.text}</span>`,
+                        html: `<span style="display: inline-block; white-space: nowrap; font-size: 14px; font-weight: bold; color: #000000 !important; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff !important;">${obj.text}</span>`,
                         iconSize: null,       
                         iconAnchor: [10, 10]  
                     })
                 });
-            } else if (obj.type === "symbol") {
+            } else if (obj.type === "symbol" && obj.icon) {
                 marker = L.marker([obj.lat, obj.lng], {
                     icon: L.icon({ iconUrl: obj.icon, iconSize: [32, 32], iconAnchor: [16, 16] })
                 });
@@ -322,4 +305,117 @@
             if (marker) {
                 marker.addTo(markersGroup);
                 marker.on("click", function(e) {
-                    L.DomEvent.stopPropagation
+                    L.DomEvent.stopPropagation(e);
+                    state.objects.splice(index, 1);
+                    saveState();
+                    render();
+                });
+            }
+        });
+    }
+
+    map.on("click", function(e) {
+        if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) return;
+
+        if (textMode) {
+            let txt = prompt("Введіть оперативно-тактичний підпис:");
+            if (!txt) return;
+            state.objects.push({ type: "text", lat: e.latlng.lat, lng: e.latlng.lng, text: txt });
+            saveState();
+            render();
+            textMode = false;
+            return;
+        }
+
+        if (ellipseMode) {
+            let rX = prompt("Введіть довжину зони (радіус X за вітром) в метрах:", "5000");
+            if (!rX) return;
+            let rY = prompt("Введіть ширину зони (радіус Y бокове поширення) в метрах:", "2000");
+            if (!rY) return;
+            let angle = prompt("Введіть кут повороту хмари (в градусах, від 0 до 360):", "0");
+            if (angle === null) return;
+
+            state.shapes.push({
+                id: Date.now(),
+                isCircle: false,
+                isEllipse: true,
+                ellipseCenter: [e.latlng.lat, e.latlng.lng],
+                radiusX: parseFloat(rX),
+                radiusY: parseFloat(rY),
+                tilt: parseFloat(angle)
+            });
+
+            saveState();
+            restoreShapes();
+            ellipseMode = false;
+            return;
+        }
+
+        if (selectedIcon) {
+            state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
+            saveState();
+            render();
+        }
+    });
+
+    map.on(L.Draw.Event.CREATED, function (e) {
+        let layer = e.layer;
+        let type = e.layerType;
+
+        if (layer.setStyle) {
+            layer.setStyle({ color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
+        }
+
+        let shapeData = {
+            id: Date.now(),
+            geojson: layer.toGeoJSON(),
+            isCircle: false,
+            isEllipse: false
+        };
+
+        if (typeof layer.getRadius === 'function' && type !== 'ellipse') {
+            shapeData.isCircle = true;
+            shapeData.circleRadius = layer.getRadius();
+            let latlng = layer.getLatLng();
+            shapeData.circleCenter = [latlng.lat, latlng.lng];
+        }
+
+        state.shapes.push(shapeData);
+        drawnItems.addLayer(layer);
+        saveState();
+    });
+
+    function exportPNG() {
+        const area = document.getElementById("capture_area");
+        document.getElementById("panel").style.display = "none";
+        
+        html2canvas(area, { useCORS: true, allowTaint: true, scale: 2 }).then(function(canvas) {
+            const link = document.createElement("a");
+            link.download = `CBRN_Map_SITREP_${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            document.getElementById("panel").style.display = "block";
+        });
+    }
+
+    function setWindDirection(deg) {
+        let visualAngle = (deg + 180) % 360;
+        document.getElementById("windArrow").style.transform = `rotate(${visualAngle}deg)`;
+        document.getElementById("windDeg").innerText = deg + "°";
+    }
+
+    function applyWind() {
+        let val = document.getElementById("windInput").value;
+        if (val === "" || isNaN(val)) return;
+        let deg = parseInt(val);
+        deg = ((deg % 360) + 360) % 360;
+        setWindDirection(deg);
+    }
+
+    loadState();
+    restoreShapes();
+    render();
+    setWindDirection(0);
+</script>
+</body>
+</html>
