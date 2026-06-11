@@ -210,10 +210,20 @@
         }
     }
 
-   function restoreShapes() {
+  function restoreShapes() {
         if (!state.shapes) return;
         drawnItems.clearLayers();
-        state.shapes.forEach(s => {
+
+        // 1. Відокремлюємо еліпси, щоб правильно розрахувати їхню тактичну градацію
+        let ellipses = state.shapes.filter(s => s.isEllipse && s.radiusX && s.radiusY);
+        let otherShapes = state.shapes.filter(s => !s.isEllipse || !s.radiusX || !s.radiusY);
+
+        // Сортуємо за ДОВЖИНОЮ (radiusX) від найбільшого до найменшого.
+        // Завдяки цьому великі (світлі) зони малюються першими, а менші (темніші) лягають поверх них.
+        ellipses.sort((a, b) => b.radiusX - a.radiusX);
+
+        // 2. Спочатку відновлюємо інші об'єкти (кола, лінії, полігони)
+        otherShapes.forEach(s => {
             if (s.isCircle && s.circleRadius) {
                 let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
                 L.circle(center, {
@@ -223,43 +233,6 @@
                     fillColor: "yellow",
                     fillOpacity: 0.3
                 }).addTo(drawnItems);
-                
-            // ПОВНІСТЮ СКОРИГОВАНИЙ ТАКТИЧНИЙ ЕЛІПС
-            } else if (s.isEllipse && s.radiusX && s.radiusY) {
-                let points = [];
-                let centerLat = s.ellipseCenter[0];
-                let centerLng = s.ellipseCenter[1];
-                
-                // Переведення військового кута (0 - Північ, за годинниковою) у радіани
-                let compassAngle = (360 - s.tilt) % 360; 
-                let tiltRad = (compassAngle + 90) * Math.PI / 180;
-
-                for (let i = 0; i < 64; i++) {
-                    let angle = (i / 64) * 2 * Math.PI;
-                    
-                    // Математичний розрахунок базових осей
-                    let dx = s.radiusX * Math.cos(angle);
-                    let dy = s.radiusY * Math.sin(angle);
-
-                    // Обертання осей за заданим кутом повороту
-                    let rotatedDx = dx * Math.cos(tiltRad) - dy * Math.sin(tiltRad);
-                    let rotatedDy = dx * Math.sin(tiltRad) + dy * Math.cos(tiltRad);
-
-                    // ТОЧНЕ КАРТОГРАФІЧНЕ ПРОЕКТУВАННЯ:
-                    // rotatedDx відповідає довготі (Lng, Схід-Захід), rotatedDy — широті (Lat, Північ-Південь)
-                    let latOffset = rotatedDy / 111320;
-                    let lngOffset = rotatedDx / (111320 * Math.cos(centerLat * Math.PI / 180));
-
-                    points.push([centerLat + latOffset, centerLng + lngOffset]);
-                }
-
-                L.polygon(points, {
-                    color: "black",
-                    weight: 2,
-                    fillColor: "yellow",
-                    fillOpacity: 0.3
-                }).addTo(drawnItems);
-
             } else if (s.geojson) {
                 L.geoJSON(s.geojson, {
                     style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 }
@@ -268,7 +241,52 @@
                 });
             }
         });
-    }    
+
+        // 3. МАЛЮЄМО ЕЛІПСИ З ВІЙСЬКОВИМ ЗМІЩЕННЯМ ТА ГРАДАЦІЄЮ НАСИЧЕНОСТІ
+        ellipses.forEach((s, index) => {
+            let points = [];
+            let centerLat = s.ellipseCenter[0];
+            let centerLng = s.ellipseCenter[1];
+            
+            // Напрямок за годинниковою стрілкою (0° — суворо Північ)
+            let tiltRad = (s.tilt || 0) * Math.PI / 180;
+
+            for (let i = 0; i < 64; i++) {
+                let angle = (i / 64) * 2 * Math.PI;
+                
+                // s.radiusX — довжина хмари (за вітром), s.radiusY — ширина хмари (бічне поширення)
+                let dx = s.radiusY * Math.sin(angle);
+                let dy = s.radiusX * Math.cos(angle);
+
+                // ФОРМУЛА ЗМІЩЕННЯ: переносимо край довгої осі еліпса чітко в точку аварії (кліку)
+                let rotatedDx = dx * Math.cos(tiltRad) + (dy + s.radiusX) * Math.sin(tiltRad);
+                let rotatedDy = -dx * Math.sin(tiltRad) + (dy + s.radiusX) * Math.cos(tiltRad);
+
+                // Корекція спотворення координат під кут нахилу Землі
+                let latOffset = rotatedDy / 111320;
+                let lngOffset = rotatedDx / (111320 * Math.cos(centerLat * Math.PI / 180));
+
+                points.push([centerLat + latOffset, centerLng + lngOffset]);
+            }
+
+            // Розрахунок прозорості залежно від кількості накладених зон
+            let opacity = 0.3; // якщо на карті лише 1 самотній еліпс
+            if (ellipses.length === 2) {
+                opacity = (index === 0) ? 0.3 : 0.65;
+            } else if (ellipses.length >= 3) {
+                if (index === 0) opacity = 0.22;       // Зовнішня хмара (Зона 3) — найсвітліша
+                else if (index === 1) opacity = 0.48;  // Середня хмара (Зона 2) — помірна
+                else opacity = 0.75;                   // Епіцентр біля аварії (Зона 1) — найгустіша
+            }
+
+            L.polygon(points, {
+                color: "black",       // Чорна тактична межа зон
+                weight: 2,            // Товщина лінії межі
+                fillColor: "#ffcc00",  // Насичений жовто-золотий тактичний колір РХБЗ
+                fillOpacity: opacity  // Динамічний відтінок насиченості
+            }).addTo(drawnItems);
+        });
+    }
     function enableText() { textMode = true; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
     function enableEllipseMode() { ellipseMode = true; textMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; alert("Режим еліпса активовано! Клікніть на карті, де розташований центр зони."); }
     function disableMode() { textMode = false; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
