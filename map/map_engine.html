@@ -224,14 +224,20 @@
                     fillOpacity: 0.3
                 }).addTo(drawnItems);
                 
+            // КОРЕКЦІЯ НА ТАКТИЧНИЙ КОМПАС (0° = ПІВНІЧ, ЗА ГОДИННИКОВОЮ СТРІЛКОЮ)
             } else if (s.isEllipse && s.radiusX && s.radiusY) {
                 let points = [];
                 let centerLat = s.ellipseCenter[0];
                 let centerLng = s.ellipseCenter[1];
-                let tiltRad = (s.tilt || 0) * Math.PI / 180;
+                
+                // Перераховуємо градуси компаса у радіани комп'ютерної тригонометрії
+                let compassAngle = (360 - s.tilt) % 360; 
+                let tiltRad = (compassAngle + 90) * Math.PI / 180;
 
                 for (let i = 0; i < 64; i++) {
                     let angle = (i / 64) * 2 * Math.PI;
+                    
+                    // dx — довжина по осі вітру (радіус X), dy — бічне поширення хмари (радіус Y)
                     let dx = s.radiusX * Math.cos(angle);
                     let dy = s.radiusY * Math.sin(angle);
 
