@@ -210,7 +210,7 @@
         }
     }
 
-    function restoreShapes() {
+   function restoreShapes() {
         if (!state.shapes) return;
         drawnItems.clearLayers();
         state.shapes.forEach(s => {
@@ -224,26 +224,29 @@
                     fillOpacity: 0.3
                 }).addTo(drawnItems);
                 
-            // КОРЕКЦІЯ НА ТАКТИЧНИЙ КОМПАС (0° = ПІВНІЧ, ЗА ГОДИННИКОВОЮ СТРІЛКОЮ)
+            // ПОВНІСТЮ СКОРИГОВАНИЙ ТАКТИЧНИЙ ЕЛІПС
             } else if (s.isEllipse && s.radiusX && s.radiusY) {
                 let points = [];
                 let centerLat = s.ellipseCenter[0];
                 let centerLng = s.ellipseCenter[1];
                 
-                // Перераховуємо градуси компаса у радіани комп'ютерної тригонометрії
+                // Переведення військового кута (0 - Північ, за годинниковою) у радіани
                 let compassAngle = (360 - s.tilt) % 360; 
                 let tiltRad = (compassAngle + 90) * Math.PI / 180;
 
                 for (let i = 0; i < 64; i++) {
                     let angle = (i / 64) * 2 * Math.PI;
                     
-                    // dx — довжина по осі вітру (радіус X), dy — бічне поширення хмари (радіус Y)
+                    // Математичний розрахунок базових осей
                     let dx = s.radiusX * Math.cos(angle);
                     let dy = s.radiusY * Math.sin(angle);
 
+                    // Обертання осей за заданим кутом повороту
                     let rotatedDx = dx * Math.cos(tiltRad) - dy * Math.sin(tiltRad);
                     let rotatedDy = dx * Math.sin(tiltRad) + dy * Math.cos(tiltRad);
 
+                    // ТОЧНЕ КАРТОГРАФІЧНЕ ПРОЕКТУВАННЯ:
+                    // rotatedDx відповідає довготі (Lng, Схід-Захід), rotatedDy — широті (Lat, Північ-Південь)
                     let latOffset = rotatedDy / 111320;
                     let lngOffset = rotatedDx / (111320 * Math.cos(centerLat * Math.PI / 180));
 
@@ -265,14 +268,7 @@
                 });
             }
         });
-    }
-
-    document.getElementById("symbolSelect").onchange = function(e) {
-        selectedIcon = e.target.value;
-        textMode = false;
-        ellipseMode = false;
-    };
-    
+    }    
     function enableText() { textMode = true; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
     function enableEllipseMode() { ellipseMode = true; textMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; alert("Режим еліпса активовано! Клікніть на карті, де розташований центр зони."); }
     function disableMode() { textMode = false; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
