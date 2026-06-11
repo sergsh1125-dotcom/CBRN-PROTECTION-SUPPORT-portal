@@ -96,50 +96,7 @@ with col_center:
 
     components.html(map_html, height=750)
 
-    # ===============================
-    # КНОПКИ ЭКСПОРТА КАРТЫ
-    # ===============================
-    st.markdown("### 📤 Експорт карти")
-
-    col1, col2 = st.columns(2)
-
-    # PNG экспорт (через JS внутри карты)
-    col1.markdown("""
-    <button onclick="
-        html2canvas(document.getElementById('capture_area'), {useCORS:true, scale:2}).then(canvas => {
-            let link = document.createElement('a');
-            link.download = 'CBRN_map.png';
-            link.href = canvas.toDataURL();
-            link.click();
-        });
-    " style="
-        width:100%;
-        padding:10px;
-        background:#FFD600;
-        border:none;
-        font-weight:bold;
-        border-radius:6px;
-        cursor:pointer;
-    ">
-    📸 Зберегти PNG
-    </button>
-    """, unsafe_allow_html=True)
-
-    # PDF (печать браузера)
-    col2.markdown("""
-    <button onclick="window.print()" style="
-        width:100%;
-        padding:10px;
-        background:#FFD600;
-        border:none;
-        font-weight:bold;
-        border-radius:6px;
-        cursor:pointer;
-    ">
-    🖨 Зберегти PDF
-    </button>
-    """, unsafe_allow_html=True)
-# -------- ПРАВА ПАНЕЛЬ --------
+   # -------- ПРАВА ПАНЕЛЬ --------
 with col_right:
     with st.expander("🌤️ МОНІТОРИНГ ВІТРУ", expanded=False):
         windy_html = """
