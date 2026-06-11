@@ -393,7 +393,8 @@ map.on("click", function(e) {
             // За бажанням можна розкоментувати рядок нижче, щоб знак скидався після одного виставлення:
             // selectedIcon = ""; document.getElementById("symbolSelect").value = "";
         }
-    });    map.on(L.Draw.Event.CREATED, function (e) {
+    });
+    map.on(L.Draw.Event.CREATED, function (e) {
         let layer = e.layer;
         let type = e.layerType;
 
