@@ -57,12 +57,18 @@
 .label {
     background: transparent;
     border: none;
-    padding: 0;
+    padding: 2px 4px;
     display: inline-block;
-    white-space: normal;
+
+    /* Запрет переноса строк */
+    white-space: nowrap;
+
+    /* Ширина автоматически подстраивается под текст */
+    width: max-content;
+    max-width: none;
+
     font-size: 13px;
     font-weight: bold;
-    max-width: 500px;
     text-align: center;
     line-height: 1.3;
     box-shadow: none;
