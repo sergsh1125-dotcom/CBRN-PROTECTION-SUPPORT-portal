@@ -257,17 +257,18 @@
 
         state.objects.forEach((obj, index) => {
             let marker;
-           if (obj.type === "text") {
+          if (obj.type === "text") {
             marker = L.marker([obj.lat, obj.lng], {
                 icon: L.divIcon({ 
                     className: "cbrn-text-container", 
-                    // Жорстко прописуємо нульовий фон, відсутність рамок та тіней прямо в HTML-код елемента
-                    html: `<span style="background: transparent !important; border: none !important; box-shadow: none !important; display: inline-block; white-space: nowrap; font-size: 14px; font-weight: bold; color: #ffcc00 !important; text-shadow: 1px 1px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000 !important;">${obj.text}</span>`,
+                    // color змінено на #000000 (чорний), text-shadow змінено на #ffffff (білий контур)
+                    html: `<span style="background: transparent !important; border: none !important; box-shadow: none !important; display: inline-block; white-space: nowrap; font-size: 14px; font-weight: bold; color: #000000 !important; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff !important;">${obj.text}</span>`,
                     iconSize: null,       
                     iconAnchor: [10, 10]  
                 })
             });
-            } else if (obj.type === "symbol") {
+        }
+            else if (obj.type === "symbol") {
                 marker = L.marker([obj.lat, obj.lng], {
                     icon: L.icon({ iconUrl: obj.icon, iconSize: [32, 32], iconAnchor: [16, 16] })
                 });
