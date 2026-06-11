@@ -197,7 +197,24 @@
 <button onclick="disableMode()">ВИКЛ</button>
 <button onclick="clearAll()">Очистити</button>
 <br><br>
+<br><br>
+<div style="font-weight:bold;">Вітер (0–360°)</div>
 
+<input id="windInput" type="number" min="0" max="360"
+       style="width:100%; padding:5px; margin-top:5px;"
+       placeholder="Напрямок">
+
+<button onclick="applyWind()" style="
+    width:100%;
+    margin-top:5px;
+    padding:6px;
+    background:#FFD600;
+    border:none;
+    font-weight:bold;
+    cursor:pointer;
+">
+Застосувати
+</button>
 <button onclick="exportPNG()">📸 PNG</button>
 <button onclick="window.print()">🖨 PDF</button>
 <br><br>
@@ -430,8 +447,6 @@ function exportPNG() {
 
 }
 function setWindDirection(deg) {
-    // важно: "откуда дует"
-    // значит стрелка смотрит В ПРОТИВОПОЛОЖНУЮ сторону
     let visualAngle = (deg + 180) % 360;
 
     document.getElementById("windArrow").style.transform =
@@ -439,6 +454,19 @@ function setWindDirection(deg) {
 
     document.getElementById("windDeg").innerText = deg + "°";
 }
+function applyWind() {
+    let val = document.getElementById("windInput").value;
+
+    if (val === "" || isNaN(val)) return;
+
+    let deg = parseInt(val);
+
+    // нормализация 0–360
+    deg = ((deg % 360) + 360) % 360;
+
+    setWindDirection(deg);
+}
+setWindDirection(0);
 </script>
 <div id="windWidget">
     <div class="wind-title">Вітер</div>
