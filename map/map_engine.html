@@ -210,19 +210,18 @@
         }
     }
 
-  function restoreShapes() {
+ function restoreShapes() {
         if (!state.shapes) return;
         drawnItems.clearLayers();
 
-        // 1. Відокремлюємо еліпси, щоб правильно розрахувати їхню тактичну градацію
+        // 1. Відокремлюємо еліпси для тактичного сортування та градації
         let ellipses = state.shapes.filter(s => s.isEllipse && s.radiusX && s.radiusY);
         let otherShapes = state.shapes.filter(s => !s.isEllipse || !s.radiusX || !s.radiusY);
 
-        // Сортуємо за ДОВЖИНОЮ (radiusX) від найбільшого до найменшого.
-        // Завдяки цьому великі (світлі) зони малюються першими, а менші (темніші) лягають поверх них.
+        // Сортуємо еліпси від найбільшого до найменшого
         ellipses.sort((a, b) => b.radiusX - a.radiusX);
 
-        // 2. Спочатку відновлюємо інші об'єкти (кола, лінії, полігони)
+        // 2. Малюємо інші фігури
         otherShapes.forEach(s => {
             if (s.isCircle && s.circleRadius) {
                 let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
@@ -242,52 +241,52 @@
             }
         });
 
-        // 3. МАЛЮЄМО ЕЛІПСИ З ВІЙСЬКОВИМ ЗМІЩЕННЯМ ТА ГРАДАЦІЄЮ НАСИЧЕНОСТІ
+        // 3. МАЛЮЄМО ЕЛІПС ЗА НАПРЯМКОМ МЕТЕОРОЛОГІЧНОГО ВІТРУ
         ellipses.forEach((s, index) => {
             let points = [];
             let centerLat = s.ellipseCenter[0];
             let centerLng = s.ellipseCenter[1];
             
-            // Напрямок за годинниковою стрілкою (0° — суворо Північ)
-            let tiltRad = (s.tilt || 0) * Math.PI / 180;
+            // Базовий тактичний кут вітру переводимо в радіани
+            let windRad = (s.tilt || 0) * Math.PI / 180;
+            
+            // МЕТЕО-РОЗВЕРТКА: Додаємо Math.PI (180°), щоб хмара летіла НАЗАД від напрямку вітру
+            let angleRad = windRad + Math.PI; 
 
             for (let i = 0; i < 64; i++) {
                 let angle = (i / 64) * 2 * Math.PI;
                 
-                // s.radiusX — довжина хмари (за вітром), s.radiusY — ширина хмари (бічне поширення)
-                let dx = s.radiusY * Math.sin(angle);
-                let dy = s.radiusX * Math.cos(angle);
+                let x = s.radiusY * Math.cos(angle); 
+                let y = s.radiusX * Math.sin(angle); 
 
-                // ФОРМУЛА ЗМІЩЕННЯ: переносимо край довгої осі еліпса чітко в точку аварії (кліку)
-                let rotatedDx = dx * Math.cos(tiltRad) + (dy + s.radiusX) * Math.sin(tiltRad);
-                let rotatedDy = -dx * Math.sin(tiltRad) + (dy + s.radiusX) * Math.cos(tiltRad);
+                // Зміщення +s.radiusX виштовхує еліпс вперед, залишаючи точку кліку на початку хмари
+                let rotatedDx = x * Math.cos(angleRad) + (y + s.radiusX) * Math.sin(angleRad);
+                let rotatedDy = -x * Math.sin(angleRad) + (y + s.radiusX) * Math.cos(angleRad);
 
-                // Корекція спотворення координат під кут нахилу Землі
                 let latOffset = rotatedDy / 111320;
                 let lngOffset = rotatedDx / (111320 * Math.cos(centerLat * Math.PI / 180));
 
                 points.push([centerLat + latOffset, centerLng + lngOffset]);
             }
 
-            // Розрахунок прозорості залежно від кількості накладених зон
-            let opacity = 0.3; // якщо на карті лише 1 самотній еліпс
+            // Налаштування градації прозорості (Зона 3, 2, 1)
+            let opacity = 0.3; 
             if (ellipses.length === 2) {
-                opacity = (index === 0) ? 0.3 : 0.65;
+                opacity = (index === 0) ? 0.25 : 0.6;
             } else if (ellipses.length >= 3) {
-                if (index === 0) opacity = 0.22;       // Зовнішня хмара (Зона 3) — найсвітліша
-                else if (index === 1) opacity = 0.48;  // Середня хмара (Зона 2) — помірна
-                else opacity = 0.75;                   // Епіцентр біля аварії (Зона 1) — найгустіша
+                if (index === 0) opacity = 0.20;       // Зона 3 (найсвітліша)
+                else if (index === 1) opacity = 0.45;  // Зона 2 (середня)
+                else opacity = 0.75;                   // Зона 1 (найгустіша)
             }
 
             L.polygon(points, {
-                color: "black",       // Чорна тактична межа зон
-                weight: 2,            // Товщина лінії межі
-                fillColor: "#ffcc00",  // Насичений жовто-золотий тактичний колір РХБЗ
-                fillOpacity: opacity  // Динамічний відтінок насиченості
+                color: "black",
+                weight: 2,
+                fillColor: "#ffcc00",
+                fillOpacity: opacity
             }).addTo(drawnItems);
         });
-    }
-    function enableText() { textMode = true; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
+    }    function enableText() { textMode = true; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
     function enableEllipseMode() { ellipseMode = true; textMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; alert("Режим еліпса активовано! Клікніть на карті, де розташований центр зони."); }
     function disableMode() { textMode = false; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
     
