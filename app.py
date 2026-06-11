@@ -1,185 +1,341 @@
-import streamlit as st
-import streamlit.components.v1 as components
-import os
-# --- 1. НАЛАШТУВАННЯ СТОРІНКИ ---
-st.set_page_config(
-    page_title="ОФІС CBRN",
-    page_icon="☢️",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>РХБ Обстановка - Модуль 1.5</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-# --- 2. ГЛОБАЛЬНІ СТИЛІ (CSS) ---
-st.markdown("""
-<style>
-    #MainMenu, footer, header, .stDeployButton {visibility: hidden; display: none !important;}
-    .block-container {padding:1rem !important; max-width:100% !important; padding-top: 1.5rem !important;}
-    .stApp {background-color:#0e1117; color:#e0e0e0;}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
-    .main-title {
-        color:#ffcc00 !important;
-        text-align:center !important;
-        font-size:25px !important;
-        font-weight:bold !important;
-        margin-top:-20px !important;
-        margin-bottom:15px !important;
-        text-transform:uppercase !important;
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #capture_area {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Стиль підписів на карті */
+        .label {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 2px 6px;
+            display: inline-block;
+            white-space: nowrap;
+            width: max-content;
+            font-size: 12px;
+            font-weight: bold;
+            color: #000;
+            text-align: center;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+        }
+
+        /* Панель інструментів (правий верхній кут) */
+        #panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 9999;
+            background: #1a1a1a; /* Темна тема під ваш інтерфейс */
+            color: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            width: 230px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid #FFD600;
+        }
+        #panel select, #panel input {
+            width: 100%;
+            padding: 6px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #333;
+            color: #fff;
+            box-sizing: border-box;
+        }
+        #panel button {
+            width: 31%;
+            padding: 6px 2px;
+            margin-bottom: 5px;
+            background: #444;
+            color: #fff;
+            border: 1px solid #555;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        #panel button:hover { background: #555; }
+        #panel .btn-action {
+            width: 100%;
+            background: #FFD600;
+            color: #000;
+            border: none;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+        #panel .btn-action:hover { background: #e6c000; }
+        
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        /* Віджет вітру */
+        #windWidget {
+            position: absolute;
+            left: 10px;
+            bottom: 20px;
+            z-index: 9999;
+            background: rgba(26, 26, 26, 0.85);
+            color: #FFD600;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #FFD600;
+            text-align: center;
+            width: 70px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .wind-arrow {
+            font-size: 26px;
+            margin: 5px 0;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-block;
+        }
+        .wind-deg { font-size: 12px; font-weight: bold; }
+
+        /* Режим друку */
+        @media print {
+            #panel { display: none !important; }
+            #windWidget { border: 1px solid #000; color: #000; background: white; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="capture_area">
+    <div id="map"></div>
+
+    <div id="panel">
+        <label for="symbolSelect" style="font-size: 11px; color: #aaa;">УМОВНІ ЗНАКИ РХБЗ:</label>
+        <select id="symbolSelect">
+            <option value="">-- Оберіть знак --</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_radiation.svg">Точка радіоактивного забруднення</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_chemical.svg">Точка хімічного забруднення</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_biological.svg">Точка біологічного зараження</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/nuclear_blast.svg">Епіцентр ядерного вибуху</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/radioactive_site.svg">Радіаційно небезпечний об’єкт</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/chemical_hazard_site.svg">Хімічно небезпечний об’єкт</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/biological_hazard_site.svg">Біологічно небезпечний об’єкт</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/cbrn_recon_area.svg">Район РХБ розвідки</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/decon_area_special.svg">Район спецобробки</option>
+            <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/cbrn_post.svg">Пост спостереження РХБ</option>
+        </select>
+
+        <div class="btn-group">
+            <button onclick="enableText()">Текст</button>
+            <button onclick="disableMode()">ВИКЛ</button>
+            <button style="background:#8b0000;" onclick="clearAll()">Очистити</button>
+        </div>
+
+        <div style="font-weight:bold; margin-top:10px; font-size:12px;">Напрямок вітру (0–360°)</div>
+        <input id="windInput" type="number" min="0" max="360" placeholder="Градуси">
+        
+        <button class="btn-action" onclick="applyWind()">Застосувати вітер</button>
+        
+        <div class="btn-group" style="margin-top: 8px;">
+            <button style="width:48%; background:#2e7d32;" onclick="exportPNG()">📸 PNG</button>
+            <button style="width:48%; background:#1565c0;" onclick="window.print()">🖨 PDF</button>
+        </div>
+    </div>
+
+    <div id="windWidget">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Вітер</div>
+        <div class="wind-arrow" id="windArrow">↑</div>
+        <div class="wind-deg" id="windDeg">0°</div>
+    </div>
+</div>
+
+<script>
+    // Стан системи
+    let state = { objects: [], shapes: [] };
+    let selectedIcon = "";
+    let textMode = false;
+
+    // Ініціалізація карти
+    let map = L.map('map').setView([48.3, 31.1], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Шар для геометричних фігур (Leaflet.Draw)
+    let drawnItems = new L.FeatureGroup().addTo(map);
+
+    // Конфігурація панелі малювання
+    let drawControl = new L.Control.Draw({
+        draw: {
+            polygon: true,
+            rectangle: true,
+            circle: true,
+            polyline: true,
+            marker: false,
+            circlemarker: false
+        },
+        edit: { featureGroup: drawnItems }
+    }).addTo(map);
+
+    // Робота з LocalStorage
+    function saveState() { localStorage.setItem("cbrn_state", JSON.stringify(state)); }
+    function loadState() {
+        let saved = localStorage.getItem("cbrn_state");
+        if (saved) state = JSON.parse(saved);
     }
 
-    .module-header {
-        color:#ffcc00 !important;
-        border-bottom:1px solid #ffcc00 !important;
-        margin-top:10px !important;
-        margin-bottom:8px !important;
-        font-weight:bold !important;
-        font-size:18px !important;
-        text-transform:uppercase !important;
+    function restoreShapes() {
+        drawnItems.clearLayers();
+        state.shapes.forEach(s => {
+            L.geoJSON(s.geojson, {
+                style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 }
+            }).eachLayer(layer => {
+                drawnItems.addLayer(layer);
+            });
+        });
     }
 
-    div.stLinkButton > a {
-        background-color:#ffcc00 !important;
-        color:#000 !important;
-        border:none !important;
-        width:100% !important;
-        font-weight:bold !important;
-        font-size:12px !important;
-        border-radius:4px !important;
-        padding:8px 12px !important;
-        display:flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-        text-decoration: none !important;
-        white-space: pre-wrap !important;
-        height: auto !important;
-        min-height: 3em !important;
-        line-height: 1.2 !important;
-    }
-
-    div.stExpander {
-        background-color: transparent !important;
-        border: 1px solid #ffcc00 !important;
-        border-radius:4px !important;
-    }
-    div.stExpander summary { color:#ffcc00 !important; font-weight:bold !important; }
-
-    @media print {
-        .stColumn:first-child, .stColumn:last-child, button, .main-title, .module-header {
-            display: none !important;
+    // Керування режимами
+    document.getElementById("symbolSelect").onchange = function(e) {
+        selectedIcon = e.target.value;
+        textMode = false;
+    };
+    function enableText() { textMode = true; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
+    function disableMode() { textMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
+    function clearAll() {
+        if(confirm("Очистити всю обстановку на карті?")) {
+            state = { objects: [], shapes: [] };
+            localStorage.removeItem("cbrn_state");
+            location.reload();
         }
     }
-</style>
-""", unsafe_allow_html=True)
 
-st.markdown('<p class="main-title">Платформа підтримки заходів реагування на ХБРЯ інциденти</p>', unsafe_allow_html=True)
+    // Рендеринг маркерів та тексту
+    let markersGroup = L.layerGroup().addTo(map);
 
-col_left, col_center, col_right = st.columns([1.3, 4.4, 1.3])
+    function render() {
+        markersGroup.clearLayers();
 
-# -------- ЛІВА ПАНЕЛЬ --------
-with col_left:
-    st.markdown('<p class="module-header">МОДУЛЬ 1. РХБ ОБСТАНОВКА</p>', unsafe_allow_html=True)
-    st.link_button("1.1. Карта радіаційного моніторингу (SaveEcoBot)", "https://www.saveecobot.com/radiation-maps")
-    st.link_button("1.2. Карта радіаційного моніторингу Укргідромету", "https://www.meteo.gov.ua/#RADIO")
-    st.link_button("1.3. Карта радіаційного моніторингу країн ЄС", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
-    st.link_button("1.4. Карта прогнозу хімічної обстановки", "http://forecast.inf.ua/")
-    st.link_button("1.5. Карта фактичної РХБ обстановки", "https://map-obstanovka-vuvukyx4vwu9jrhuv68vcg.streamlit.app/")
-    st.info("💡 Координати на карті фактичної РХБ обстановки завантажуються кліком мишки.")
+        state.objects.forEach((obj, index) => {
+            let marker;
+            if (obj.type === "text") {
+                marker = L.marker([obj.lat, obj.lng], {
+                    icon: L.divIcon({ className: "label", html: obj.text })
+                });
+            } else if (obj.type === "symbol") {
+                marker = L.marker([obj.lat, obj.lng], {
+                    icon: L.icon({ iconUrl: obj.icon, iconSize: [32, 32], iconAnchor: [16, 16] })
+                });
+            }
 
-    st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
-    st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
-    st.link_button("2.2. Токсодози бойових ОР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
-
-# -------- ЦЕНТР (КАРТА) --------
-with col_center:
-    with open("map/map_engine.html", "r", encoding="utf-8") as f:
-        map_html = f.read()
-
-    components.html(map_html, height=750)
-
-   # -------- ПРАВА ПАНЕЛЬ --------
-with col_right:
-    with st.expander("🌤️ МОНІТОРИНГ ВІТРУ", expanded=False):
-        windy_html = """
-        <iframe width="100%" height="300" src="https://embed.windy.com/embed2.html?lat=49.0&lon=31.0&zoom=5&level=surface&overlay=wind&product=ecmwf&metricWind=m%2Fs&metricTemp=%C2%B0C" frameborder="0"></iframe>
-        """
-        components.html(windy_html, height=310)
-
-    st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
-    st.link_button("3.1. Калькулятор дози (Ядерний вибух)", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
-    st.link_button("3.2. Калькулятор дози (Аварія на АЕС)", "https://sergsh1125-dotcom.github.io/radiation-doza/")
-    st.link_button("3.3. Розрахунок часу перебування", "https://sergsh1125-dotcom.github.io/calculator-time/")
-
-    st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКА</p>', unsafe_allow_html=True)
-    st.link_button("4.1. Укргідрометеоцентр", "https://www.meteo.gov.ua/")
-    st.link_button("4.2. Нормативно-правова база РХЗ", "https://dsns.gov.ua/zakonodavstvo/perelik-normativno-pravovix-dokumentiv-shho-reglamentuyut-diyalnist-pidrozdiliv-dsns-ukrayini/upravlinnia-organizaciyi-radiaciinogo-ximicnogo-ta-biologicnogo-zaxistu")
-    st.link_button("4.3. СОП 1.1/РХБЗ: Демеркуризація\nСОП 1.2: Дії підрозділів при НС з НХР", "https://kyiv.dsns.gov.ua/navchalniy-centr-gu/sluzhbova-pidgotovka/normativno-pravovi-akti")
-    # ===============================
-    # 4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ
-    # ===============================
-
-    DOCS_FOLDER = "docs"
-
-    # ----- Стиль кнопок документів -----
-    st.markdown("""
-    <style>
-    div[data-testid="stDownloadButton"] > button {
-        background-color:#ffcc00 !important;
-        color:black !important;
-        border:none !important;
-        width:100% !important;
-        font-weight:bold !important;
-        font-size:11px !important;
-        border-radius:4px !important;
-        padding:8px 10px !important;
-        margin-bottom:5px !important;
+            if (marker) {
+                marker.addTo(markersGroup);
+                // Видалення об'єкта по кліку на нього
+                marker.on("click", function(e) {
+                    L.DomEvent.stopPropagation(e); // Зупиняємо клік по карті
+                    state.objects.splice(index, 1);
+                    saveState();
+                    render();
+                });
+            }
+        });
     }
 
-    div[data-testid="stDownloadButton"] > button:hover {
-        background-color:#ffd633 !important;
-        color:black !important;
-   }
-    </style>
-    """, unsafe_allow_html=True)
+    // Обробка кліку по карті (Встановлення знаків/тексту)
+    map.on("click", function(e) {
+        // Перевірка: якщо активний режим малювання Leaflet.Draw, ігноруємо клік
+        if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) return;
 
-    # ----- Розділ модуля -----
-    with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=False):
+        if (textMode) {
+            let txt = prompt("Введіть оперативно-тактичний підпис:");
+            if (!txt) return;
+            state.objects.push({ type: "text", lat: e.latlng.lat, lng: e.latlng.lng, text: txt });
+            saveState();
+            render();
+            textMode = false;
+            return;
+        }
 
-        if os.path.isdir(DOCS_FOLDER):
+        if (selectedIcon) {
+            state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
+            saveState();
+            render();
+        }
+    });
 
-            allowed_extensions = (
-                ".docx",
-                ".pdf",
-                ".xlsx",
-                ".csv",
-                ".txt",
-                ".pptx"
-            )
+    // Збереження геометрії Leaflet.Draw
+    map.on(L.Draw.Event.CREATED, function (e) {
+        let layer = e.layer;
+        if (layer.setStyle) {
+            layer.setStyle({ color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
+        }
+        state.shapes.push({ id: Date.now(), geojson: layer.toGeoJSON() });
+        drawnItems.addLayer(layer);
+        saveState();
+    });
 
-            doc_files = sorted([
-                f for f in os.listdir(DOCS_FOLDER)
-                if f.lower().endswith(allowed_extensions)
-            ])
+    // Експорт в PNG
+    function exportPNG() {
+        const area = document.getElementById("capture_area");
+        // Тимчасово ховаємо інтерфейс керування для чистішого знімку
+        document.getElementById("panel").style.display = "none";
+        
+        html2canvas(area, { useCORS: true, allowTaint: true, scale: 2 }).then(function(canvas) {
+            const link = document.createElement("a");
+            link.download = `CBRN_Map_SITREP_${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            document.getElementById("panel").style.display = "block";
+        });
+    }
 
-            if doc_files:
+    // Логіка віджета вітру
+    function setWindDirection(deg) {
+        // deg - метеорологічний кут (звідки дме). 
+        // Якщо потрібно показати НАПРЯМОК ХМАРИ (куди дме), залишаємо + 180.
+        let visualAngle = (deg + 180) % 360;
+        document.getElementById("windArrow").style.transform = `rotate(${visualAngle}deg)`;
+        document.getElementById("windDeg").innerText = deg + "°";
+    }
 
-                for file_name in doc_files:
+    function applyWind() {
+        let val = document.getElementById("windInput").value;
+        if (val === "" || isNaN(val)) return;
+        let deg = parseInt(val);
+        deg = ((deg % 360) + 360) % 360; // Валідація меж
+        setWindDirection(deg);
+    }
 
-                    file_path = os.path.join(DOCS_FOLDER, file_name)
-
-                    with open(file_path, "rb") as file:
-
-                        st.download_button(
-                            label=f"📄 {file_name}",
-                            data=file,
-                            file_name=file_name,
-                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                            use_container_width=True,
-                            key=f"doc_{file_name}"
-                        )
-
-            else:
-                st.warning("У папці docs немає файлів.")
-
-        else:
-            st.error("Папка docs не знайдена.")
-   
+    // Запуск системи
+    loadState();
+    restoreShapes();
+    render();
+    setWindDirection(0);
+</script>
+</body>
+</html>
