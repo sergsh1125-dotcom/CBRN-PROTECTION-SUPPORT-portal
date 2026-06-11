@@ -341,9 +341,14 @@ function restoreShapes() {
         });
     }
 
- map.on("click", function(e) {
-        if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) return;
+map.on("click", function(e) {
+        // Дозволяємо клік, якщо активовано знаки, текст або еліпс, 
+        // в інших випадках (стандартне малювання Leaflet.Draw) — ігноруємо.
+        if (!textMode && !ellipseMode && !selectedIcon) {
+            if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) return;
+        }
 
+        // 1. РЕЖИМ ОПЕРАТИВНОГО ТЕКСТУ
         if (textMode) {
             let txt = prompt("Введіть оперативно-тактичний підпис:");
             if (!txt) return;
@@ -354,14 +359,13 @@ function restoreShapes() {
             return;
         }
 
-        // РЕЖИМ ТАКТИЧНИХ ЗОН ALOHA
+        // 2. РЕЖИМ ТАКТИЧНИХ ЗОН ALOHA (ЕЛІПС)
         if (ellipseMode) {
             let rX = prompt("Введіть довжину зони (радіус X за вітром) в метрах:", "5000");
             if (!rX) return;
             let rY = prompt("Введіть ширину зони (радіус Y бокове поширення) в метрах:", "2000");
             if (!rY) return;
             
-            // АВТОМАТИЧНО беремо кут з вашого віджета вітру!
             let windInputVal = document.getElementById("windInput").value;
             let angle = windInputVal !== "" ? parseFloat(windInputVal) : 0;
 
@@ -369,7 +373,7 @@ function restoreShapes() {
                 id: Date.now(),
                 isCircle: false,
                 isEllipse: true,
-                ellipseCenter: [e.latlng.lat, e.latlng.lng], // Точка аварії
+                ellipseCenter: [e.latlng.lat, e.latlng.lng], 
                 radiusX: parseFloat(rX),
                 radiusY: parseFloat(rY),
                 tilt: angle
@@ -381,10 +385,13 @@ function restoreShapes() {
             return;
         }
 
+        // 3. РЕЖИМ НАНЕСЕННЯ УМОВНИХ ЗНАКІВ РХБЗ
         if (selectedIcon) {
             state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
             saveState();
             render();
+            // За бажанням можна розкоментувати рядок нижче, щоб знак скидався після одного виставлення:
+            // selectedIcon = ""; document.getElementById("symbolSelect").value = "";
         }
     });    map.on(L.Draw.Event.CREATED, function (e) {
         let layer = e.layer;
