@@ -334,7 +334,7 @@
         });
     }
 
-    map.on("click", function(e) {
+  map.on("click", function(e) {
         if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) return;
 
         if (textMode) {
@@ -347,6 +347,7 @@
             return;
         }
 
+        // ОНОВЛЕНИЙ РЕЖИМ ТАКТИЧНОГО ЕЛІПСА
         if (ellipseMode) {
             let rX = prompt("Введіть довжину зони (радіус X за вітром) в метрах:", "5000");
             if (!rX) return;
@@ -355,18 +356,19 @@
             let angle = prompt("Введіть кут повороту хмари (в градусах, від 0 до 360):", "0");
             if (angle === null) return;
 
+            // ЗБЕРІГАЄМО ТОЧКУ КЛІКУ ЯК СТАРТОВУ ТОЧКУ ХМАРИ
             state.shapes.push({
                 id: Date.now(),
                 isCircle: false,
                 isEllipse: true,
-                ellipseCenter: [e.latlng.lat, e.latlng.lng],
+                ellipseCenter: [e.latlng.lat, e.latlng.lng], // Тепер це початок довгої осі
                 radiusX: parseFloat(rX),
                 radiusY: parseFloat(rY),
                 tilt: parseFloat(angle)
             });
 
             saveState();
-            restoreShapes();
+            restoreShapes(); // Перемальовуємо карту з урахуванням нового еліпса
             ellipseMode = false;
             return;
         }
@@ -377,7 +379,6 @@
             render();
         }
     });
-
     map.on(L.Draw.Event.CREATED, function (e) {
         let layer = e.layer;
         let type = e.layerType;
