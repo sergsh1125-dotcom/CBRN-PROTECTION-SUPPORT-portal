@@ -321,33 +321,37 @@
         }
     });
 
-    // Збереження геометрії Leaflet.Draw
+   // Збереження геометрії Leaflet.Draw
     map.on(L.Draw.Event.CREATED, function (e) {
         let layer = e.layer;
-        let type = e.layerType; // Отримуємо тип намальованої фігури
 
+        // Примусово фарбуємо фігуру в чорний контур та жовту заливку
         if (layer.setStyle) {
             layer.setStyle({ color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
         }
 
-        // Створюємо базову структуру для збереження
+        // Базовий об'єкт для збереження
         let shapeData = {
             id: Date.now(),
             geojson: layer.toGeoJSON(),
-            isCircle: false
+            isCircle: false,
+            circleRadius: null
         };
 
-        // Якщо намальовано саме коло, додатково зберігаємо його радіус
-        if (type === 'circle' || layer instanceof L.Circle) {
+        // НАДІЙНА ПЕРЕВІРКА: якщо у об'єкта є метод getRadius, це ГАРАНТОВАНО коло
+        if (typeof layer.getRadius === 'function') {
             shapeData.isCircle = true;
             shapeData.circleRadius = layer.getRadius();
+            
+            // Вручную фіксуємо координати центру, щоб уникнути багів стандартного GeoJSON
+            let latlng = layer.getLatLng();
+            shapeData.circleCenter = [latlng.lat, latlng.lng];
         }
 
         state.shapes.push(shapeData);
         drawnItems.addLayer(layer);
         saveState();
     });
-
     function exportPNG() {
         const area = document.getElementById("capture_area");
         document.getElementById("panel").style.display = "none";
