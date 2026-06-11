@@ -240,37 +240,42 @@
         }
     }
 
-    // Рендеринг маркерів та тексту
-    let markersGroup = L.layerGroup().addTo(map);
+   // Рендеринг маркерів та тексту
+let markersGroup = L.layerGroup().addTo(map);
 
-    function render() {
-        markersGroup.clearLayers();
+function render() {
+    markersGroup.clearLayers();
 
-        state.objects.forEach((obj, index) => {
-            let marker;
-            if (obj.type === "text") {
-                marker = L.marker([obj.lat, obj.lng], {
-                    icon: L.divIcon({ className: "label", html: obj.text })
-                });
-            } else if (obj.type === "symbol") {
-                marker = L.marker([obj.lat, obj.lng], {
-                    icon: L.icon({ iconUrl: obj.icon, iconSize: [32, 32], iconAnchor: [16, 16] })
-                });
-            }
+    state.objects.forEach((obj, index) => {
+        let marker;
+        if (obj.type === "text") {
+            marker = L.marker([obj.lat, obj.lng], {
+                icon: L.divIcon({ 
+                    // Трюк тут: загортаємо текст у <span> з вашим класом label, 
+                    // а самій іконці ставимо пустий className, щоб Leaflet прибрав білий квадрат
+                    className: "", 
+                    html: `<span class="label">${obj.text}</span>`,
+                    iconAnchor: [0, 0] // щоб текст центрувався відносно точки кліку
+                })
+            });
+        } else if (obj.type === "symbol") {
+            marker = L.marker([obj.lat, obj.lng], {
+                icon: L.icon({ iconUrl: obj.icon, iconSize: [32, 32], iconAnchor: [16, 16] })
+            });
+        }
 
-            if (marker) {
-                marker.addTo(markersGroup);
-                // Видалення об'єкта по кліку на нього
-                marker.on("click", function(e) {
-                    L.DomEvent.stopPropagation(e); // Зупиняємо клік по карті
-                    state.objects.splice(index, 1);
-                    saveState();
-                    render();
-                });
-            }
-        });
-    }
-
+        if (marker) {
+            marker.addTo(markersGroup);
+            // Видалення об'єкта по кліку на нього
+            marker.on("click", function(e) {
+                L.DomEvent.stopPropagation(e); // Зупиняємо клік по карті
+                state.objects.splice(index, 1);
+                saveState();
+                render();
+            });
+        }
+    });
+}
     // Обробка кліку по карті (Встановлення знаків/тексту)
     map.on("click", function(e) {
         // Перевірка: якщо активний режим малювання Leaflet.Draw, ігноруємо клік
