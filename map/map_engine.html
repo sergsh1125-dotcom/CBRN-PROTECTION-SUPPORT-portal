@@ -29,26 +29,36 @@
             width: 100%;
         }
 
-        /* Стиль підписів на карті */
-        /* Стиль підписів на карті (тепер прозорий) */
-.label {
-    background: transparent !important; /* Робимо фон повністю прозорим */
-    border: none !important;             /* Прибираємо чорну рамку */
-    box-shadow: none !important;         /* Прибираємо тінь під фоном */
-    
-    padding: 0;
-    display: inline-block;
-    white-space: nowrap;
-    width: max-content;
-    font-size: 13px;
-    font-weight: bold;
-    color: #ffffff;                      /* Колір тексту робимо білим (або #FFD600 жовтим), щоб його було видно на темній карті */
-    text-align: center;
-    line-height: 1.3;
-    
-    /* Додаємо легке чорне світіння навколо літер, щоб текст чітко читався на будь-якому фоні карти */
-    text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000; 
-}
+        /* --- СКИДАННЯ ДЕФОЛТНИХ СТИЛІВ LEAFLET ДЛЯ ТЕКСТУ --- */
+        .leaflet-div-icon, .cbrn-text-container {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        /* --- СТИЛЬ НАПИСІВ НА КАРТІ --- */
+        .label {
+            background: transparent !important; /* Повністю прозоре поле під написом */
+            border: none !important;             /* Без рамок */
+            box-shadow: none !important;         /* Без тіней від блоку */
+            padding: 0 !important;
+            display: inline-block;
+            white-space: nowrap;
+            width: max-content;
+            font-size: 14px;                     /* Напис став чіткішим */
+            font-weight: bold;
+            color: #ffcc00 !important;           /* Жовтий оперативно-тактичний колір під стиль вашого Офісу */
+            text-align: center;
+            line-height: 1.3;
+            
+            /* Чорне контурне обведення літер, щоб текст ідеально читався на будь-якій підкладці карти */
+            text-shadow: 
+                1px  1px 0px #000, 
+               -1px -1px 0px #000, 
+                1px -1px 0px #000, 
+               -1px  1px 0px #000,
+                0px  2px 3px #000; 
+        }
 
         /* Панель інструментів (правий верхній кут) */
         #panel {
@@ -56,7 +66,7 @@
             top: 10px;
             right: 10px;
             z-index: 9999;
-            background: #1a1a1a; /* Темна тема під ваш інтерфейс */
+            background: #1a1a1a; 
             color: #fff;
             padding: 12px;
             border-radius: 6px;
@@ -194,7 +204,7 @@
     // Шар для геометричних фігур (Leaflet.Draw)
     let drawnItems = new L.FeatureGroup().addTo(map);
 
-    // Конфігурація панелі малювання
+    // Конфігурація...
     let drawControl = new L.Control.Draw({
         draw: {
             polygon: true,
@@ -207,7 +217,6 @@
         edit: { featureGroup: drawnItems }
     }).addTo(map);
 
-    // Робота з LocalStorage
     function saveState() { localStorage.setItem("cbrn_state", JSON.stringify(state)); }
     function loadState() {
         let saved = localStorage.getItem("cbrn_state");
@@ -225,13 +234,13 @@
         });
     }
 
-    // Керування режимами
     document.getElementById("symbolSelect").onchange = function(e) {
         selectedIcon = e.target.value;
         textMode = false;
     };
     function enableText() { textMode = true; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
     function disableMode() { textMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
+    
     function clearAll() {
         if(confirm("Очистити всю обстановку на карті?")) {
             state = { objects: [], shapes: [] };
@@ -240,45 +249,43 @@
         }
     }
 
-   // Рендеринг маркерів та тексту
-let markersGroup = L.layerGroup().addTo(map);
+    // Рендеринг маркерів та тексту
+    let markersGroup = L.layerGroup().addTo(map);
 
-function render() {
-    markersGroup.clearLayers();
+    function render() {
+        markersGroup.clearLayers();
 
-    state.objects.forEach((obj, index) => {
-        let marker;
-        if (obj.type === "text") {
-            marker = L.marker([obj.lat, obj.lng], {
-                icon: L.divIcon({ 
-                    // Трюк тут: загортаємо текст у <span> з вашим класом label, 
-                    // а самій іконці ставимо пустий className, щоб Leaflet прибрав білий квадрат
-                    className: "", 
-                    html: `<span class="label">${obj.text}</span>`,
-                    iconAnchor: [0, 0] // щоб текст центрувався відносно точки кліку
-                })
-            });
-        } else if (obj.type === "symbol") {
-            marker = L.marker([obj.lat, obj.lng], {
-                icon: L.icon({ iconUrl: obj.icon, iconSize: [32, 32], iconAnchor: [16, 16] })
-            });
-        }
+        state.objects.forEach((obj, index) => {
+            let marker;
+            if (obj.type === "text") {
+                marker = L.marker([obj.lat, obj.lng], {
+                    icon: L.divIcon({ 
+                        className: "cbrn-text-container", // Кастомний контейнер без стилів Leaflet
+                        html: `<span class="label">${obj.text}</span>`,
+                        iconSize: null,       /* Звільняємо блок від фіксованої ширини/висоти */
+                        iconAnchor: [10, 10]  /* Точка фокусу кліку */
+                    })
+                });
+            } else if (obj.type === "symbol") {
+                marker = L.marker([obj.lat, obj.lng], {
+                    icon: L.icon({ iconUrl: obj.icon, iconSize: [32, 32], iconAnchor: [16, 16] })
+                });
+            }
 
-        if (marker) {
-            marker.addTo(markersGroup);
-            // Видалення об'єкта по кліку на нього
-            marker.on("click", function(e) {
-                L.DomEvent.stopPropagation(e); // Зупиняємо клік по карті
-                state.objects.splice(index, 1);
-                saveState();
-                render();
-            });
-        }
-    });
-}
-    // Обробка кліку по карті (Встановлення знаків/тексту)
+            if (marker) {
+                marker.addTo(markersGroup);
+                marker.on("click", function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    state.objects.splice(index, 1);
+                    saveState();
+                    render();
+                });
+            }
+        });
+    }
+
+    // Обробка кліку по карті
     map.on("click", function(e) {
-        // Перевірка: якщо активний режим малювання Leaflet.Draw, ігноруємо клік
         if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) return;
 
         if (textMode) {
@@ -298,7 +305,6 @@ function render() {
         }
     });
 
-    // Збереження геометрії Leaflet.Draw
     map.on(L.Draw.Event.CREATED, function (e) {
         let layer = e.layer;
         if (layer.setStyle) {
@@ -309,10 +315,8 @@ function render() {
         saveState();
     });
 
-    // Експорт в PNG
     function exportPNG() {
         const area = document.getElementById("capture_area");
-        // Тимчасово ховаємо інтерфейс керування для чистішого знімку
         document.getElementById("panel").style.display = "none";
         
         html2canvas(area, { useCORS: true, allowTaint: true, scale: 2 }).then(function(canvas) {
@@ -324,10 +328,7 @@ function render() {
         });
     }
 
-    // Логіка віджета вітру
     function setWindDirection(deg) {
-        // deg - метеорологічний кут (звідки дме). 
-        // Якщо потрібно показати НАПРЯМОК ХМАРИ (куди дме), залишаємо + 180.
         let visualAngle = (deg + 180) % 360;
         document.getElementById("windArrow").style.transform = `rotate(${visualAngle}deg)`;
         document.getElementById("windDeg").innerText = deg + "°";
@@ -337,11 +338,10 @@ function render() {
         let val = document.getElementById("windInput").value;
         if (val === "" || isNaN(val)) return;
         let deg = parseInt(val);
-        deg = ((deg % 360) + 360) % 360; // Валідація меж
+        deg = ((deg % 360) + 360) % 360;
         setWindDirection(deg);
     }
 
-    // Запуск системи
     loadState();
     restoreShapes();
     render();
