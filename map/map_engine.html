@@ -295,7 +295,7 @@ function restoreShapes() {
         });
     }
     function enableText() { textMode = true; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
-    function enableEllipseMode() { ellipseMode = true; textMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; alert("Режим еліпса активовано! Клікніть на карті, де розташований центр зони."); }
+   function enableEllipseMode() { ellipseMode = true; textMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; alert("Режим еліпса активовано! Клікніть на карті в точці аварії (джерело зараження), щоб нанести початок зони."); }
     function disableMode() { textMode = false; ellipseMode = false; selectedIcon = ""; document.getElementById("symbolSelect").value = ""; }
     
     function clearAll() {
