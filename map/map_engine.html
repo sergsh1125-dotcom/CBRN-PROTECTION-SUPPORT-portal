@@ -2,13 +2,16 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>РХБ Обстановка - Модуль 1.7 (Зони AEGL)</title>
+    <title>РХБ Обстановка - Модуль 1.8 (Зони AEGL та Лінійка)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.css" />
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.min.js"></script>
 
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
@@ -211,10 +214,39 @@
     let drawnItems = new L.FeatureGroup().addTo(map);
     let markersGroup = L.layerGroup().addTo(map);
 
+    // Панель малювання Leaflet.Draw
     let drawControl = new L.Control.Draw({
         draw: { polygon: true, rectangle: true, circle: true, polyline: true, marker: false, circlemarker: false },
         edit: { featureGroup: drawnItems }
     }).addTo(map);
+
+    // --- ІНІЦІАЛІЗАЦІЯ ПРОФЕСІЙНОЇ ЛІНІЙКИ ЧЕРЕЗ GEOMAN ---
+    map.pm.addControls({
+        position: 'topleft',
+        drawMarker: false,
+        drawCircleMarker: false,
+        drawPolyline: true,   // Використовуємо лінію як лінійку
+        drawRectangle: false,
+        drawPolygon: false,
+        drawCircle: false,
+        editMode: false,
+        dragMode: false,
+        cutPolygon: false,
+        removalMode: true     // Дозволяє видаляти лінійки кліком смітника
+    });
+
+    // Налаштовуємо режим вимірювання (метрична система, км і метри)
+    map.pm.setGlobalOptions({
+        measurements: {
+            display: true,
+            totalLength: true,
+            segmentLength: true,
+            className: 'leaflet-pm-measurements',
+        }
+    });
+
+    // Зміна мови лінійки та підказок на українську
+    map.pm.setLang('uk');
 
     function saveState() { localStorage.setItem("cbrn_state", JSON.stringify(state)); }
     
@@ -235,9 +267,11 @@
         if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) {
             map._toolbars.draw._activeMode.handler.disable();
         }
+        if (map.pm.globalDrawModeEnabled()) {
+            map.pm.disableDraw();
+        }
     }
 
-    // ВІДМАЛЬОВУВАННЯ ГЕОМЕТРІЇ ТА ЕЛІПСІВ AEGL З ФУНКЦІЄЮ ВИДАЛЕННЯ
     function restoreShapes() {
         drawnItems.clearLayers();
         if (!state || !state.shapes || state.shapes.length === 0) return;
@@ -245,10 +279,8 @@
         let ellipses = state.shapes.filter(s => s && s.isEllipse && s.radiusX && s.radiusY);
         let otherShapes = state.shapes.filter(s => s && (!s.isEllipse || !s.radiusX || !s.radiusY));
 
-        // Сортуємо еліпси за розміром ID (тобто за групою створення), щоб правильно накладати шари AEGL
         ellipses.sort((a, b) => a.id - b.id);
 
-        // Малюємо стандартні фігури (кола, полігони)
         otherShapes.forEach((s, idx) => {
             let layer;
             if (s.isCircle && s.circleRadius) {
@@ -260,10 +292,8 @@
 
             if (layer) {
                 layer.addTo(drawnItems);
-                // Видалення стандартних фігур по кліку
                 layer.on("click", function(e) {
                     L.DomEvent.stopPropagation(e);
-                    // Шукаємо індекс за унікальним id або збігом геометрії
                     let globalIdx = state.shapes.findIndex(shape => shape.id === s.id);
                     if (globalIdx !== -1) {
                         state.shapes.splice(globalIdx, 1);
@@ -274,19 +304,15 @@
             }
         });
 
-        // Групуємо еліпси за часом створення (щоб розрізняти різні аварії, якщо нанесено кілька)
         let groupedEllipses = {};
         ellipses.forEach(s => {
-            // Групуємо за базовим часом (допускаємо похибку в 1 секунду)
             let baseId = Math.floor(s.id / 2000) * 2000; 
             if (!groupedEllipses[baseId]) groupedEllipses[baseId] = [];
             groupedEllipses[baseId].push(s);
         });
 
-        // Малюємо кожну групу зон AEGL окремо
         for (let baseId in groupedEllipses) {
             let currentGroup = groupedEllipses[baseId];
-            // Сортуємо всередині групи від найбільшого радіусу до найменшого
             currentGroup.sort((a, b) => b.radiusX - a.radiusX);
 
             currentGroup.forEach((s, index) => {
@@ -312,22 +338,19 @@
                     points.push([centerLat + latOffset, centerLng + lngOffset]);
                 }
 
-                // Визначення кольорів відповідно до трьох рівнів небезпеки AEGL
-                let zoneColor = "#ffcc00"; // AEGL-1 (Жовтий)
+                let zoneColor = "#ffcc00"; 
                 let zoneOpacity = 0.3;
-                let zoneName = "AEGL-1 (Низький рівень)";
 
                 if (currentGroup.length === 2) {
-                    zoneColor = (index === 0) ? "#ff9900" : "#cc0000"; // AEGL-2 (Помаранчевий), AEGL-3 (Червоний)
+                    zoneColor = (index === 0) ? "#ff9900" : "#cc0000"; 
                     zoneOpacity = (index === 0) ? 0.35 : 0.55;
-                    zoneName = (index === 0) ? "AEGL-2 (Середній рівень)" : "AEGL-3 (Високий рівень)";
                 } else if (currentGroup.length >= 3) {
                     if (index === 0) { 
-                        zoneColor = "#ffcc00"; zoneOpacity = 0.25; zoneName = "AEGL-1";
+                        zoneColor = "#ffcc00"; zoneOpacity = 0.25;
                     } else if (index === 1) { 
-                        zoneColor = "#ff9900"; zoneOpacity = 0.45; zoneName = "AEGL-2";
+                        zoneColor = "#ff9900"; zoneOpacity = 0.45;
                     } else { 
-                        zoneColor = "#cc0000"; zoneOpacity = 0.65; zoneName = "AEGL-3";
+                        zoneColor = "#cc0000"; zoneOpacity = 0.65;
                     }
                 }
 
@@ -338,20 +361,16 @@
                     fillOpacity: zoneOpacity
                 }).addTo(drawnItems);
 
-                // --- НОВА ФУНКЦІЯ: ВИДАЛЕННЯ ХМАРИ ПО КЛІКУ ---
                 polygonLayer.on("click", function(e) {
-                    L.DomEvent.stopPropagation(e); // Зупиняємо розповсюдження події, щоб не ставити новий знак
-                    
-                    if(confirm(`Видалити цю хмару забруднення (Пакет рівнів AEGL за ID: ${s.id})?`)) {
-                        // Видаляємо всі еліпси, які належать до цієї конкретної аварії (мають однаковий базовий ID)
+                    L.DomEvent.stopPropagation(e);
+                    if(confirm(`Видалити цю хмару забруднення AEGL?`)) {
                         state.shapes = state.shapes.filter(shape => {
                             if (!shape.isEllipse) return true;
                             let shapeBaseId = Math.floor(shape.id / 2000) * 2000;
                             return shapeBaseId !== parseInt(baseId);
                         });
-                        
                         saveState();
-                        restoreShapes(); // Перемальовуємо оновлену карту
+                        restoreShapes();
                     }
                 });
             });
@@ -425,6 +444,9 @@
     }
 
     map.on("click", function(e) {
+        // Якщо увімкнено лінійку чи інший режим Geoman, не перебиваємо його
+        if (map.pm.globalDrawModeEnabled()) return;
+
         if (textMode) {
             let txt = prompt("Введіть оперативно-тактичний підпис:");
             if (!txt) return;
@@ -446,8 +468,6 @@
             
             let uniqueId = Date.now();
 
-            // Автоматично створюємо каскад із 3-х підзон для відображення AEGL-1, 2, 3
-            // Кожна зона пропорційно зменшується, формуючи правильний вигляд поширення
             state.shapes.push({ id: uniqueId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX), radiusY: parseFloat(rY), tilt: angle });
             state.shapes.push({ id: uniqueId + 1, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.6, radiusY: parseFloat(rY) * 0.6, tilt: angle });
             state.shapes.push({ id: uniqueId + 2, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.3, radiusY: parseFloat(rY) * 0.3, tilt: angle });
