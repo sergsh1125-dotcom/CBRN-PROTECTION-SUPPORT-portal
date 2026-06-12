@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>РХБ Обстановка - Модуль 1.5</title>
+    <title>РХБ Обстановка - Модуль 1.6</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -90,32 +90,51 @@
             gap: 4px;
         }
 
-        /* Віджет вітру */
+        /* Оновлений розширений віджет вітру */
         #windWidget {
             position: absolute;
             left: 10px;
             bottom: 20px;
             z-index: 9999;
-            background: rgba(26, 26, 26, 0.85);
+            background: rgba(26, 26, 26, 0.9);
             color: #FFD600;
             padding: 10px;
             border-radius: 8px;
             border: 1px solid #FFD600;
             text-align: center;
-            width: 70px;
+            width: 90px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
         .wind-arrow {
-            font-size: 26px;
-            margin: 5px 0;
+            font-size: 28px;
+            margin: 2px 0;
             transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: inline-block;
         }
-        .wind-deg { font-size: 12px; font-weight: bold; }
+        .wind-deg { font-size: 12px; font-weight: bold; margin-bottom: 8px; }
+        
+        /* Табличка швидкості всередині віджета */
+        .wind-speed-table {
+            border-top: 1px dashed #FFD600;
+            margin-top: 5px;
+            padding-top: 5px;
+            font-size: 11px;
+            text-align: left;
+        }
+        .wind-speed-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+        .wind-speed-val {
+            color: #fff;
+            font-weight: bold;
+        }
 
         @media print {
             #panel { display: none !important; }
             #windWidget { border: 1px solid #000; color: #000; background: white; }
+            .wind-speed-val { color: #000; }
         }
     </style>
 </head>
@@ -148,9 +167,12 @@
         </div>
 
         <div style="font-weight:bold; margin-top:10px; font-size:12px;">Напрямок вітру (0–360°)</div>
-        <input id="windInput" type="number" min="0" max="360" placeholder="Градуси">
+        <input id="windInput" type="number" min="0" max="360" placeholder="Градуси" value="0">
+
+        <div style="font-weight:bold; margin-top:5px; font-size:12px;">Швидкість вітру (м/с)</div>
+        <input id="windSpeedInput" type="number" min="0" max="50" step="0.1" placeholder="напр. 5" value="0">
         
-        <button class="btn-action" onclick="applyWind()">Застосувати вітер</button>
+        <button class="btn-action" onclick="applyWind()">Застосувати метео</button>
         
         <div class="btn-group" style="margin-top: 8px;">
             <button style="width:48%; background:#2e7d32;" onclick="exportPNG()">📸 PNG</button>
@@ -159,9 +181,20 @@
     </div>
 
     <div id="windWidget">
-        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Вітер</div>
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Метео</div>
         <div class="wind-arrow" id="windArrow">↑</div>
         <div class="wind-deg" id="windDeg">0°</div>
+        
+        <div class="wind-speed-table">
+            <div class="wind-speed-row">
+                <span>м/с:</span>
+                <span class="wind-speed-val" id="speedMs">0</span>
+            </div>
+            <div class="wind-speed-row">
+                <span>км/г:</span>
+                <span class="wind-speed-val" id="speedKmh">0</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -179,10 +212,8 @@
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Шар для геометричних фігур
     let drawnItems = new L.FeatureGroup().addTo(map);
 
-    // Конфігурація панелі малювання
     let drawControl = new L.Control.Draw({
         draw: {
             polygon: true,
@@ -217,21 +248,16 @@
     }
 
     function restoreShapes() {
-        // Очищаємо екран у будь-якому випадку
         drawnItems.clearLayers();
-        
-        // ЗАХИСТ: якщо об'єктів немає або вони очищені, просто виходимо і не ламаємо скрипт
         if (!state || !state.shapes || state.shapes.length === 0) return;
 
         let ellipses = state.shapes.filter(s => s && s.isEllipse && s.radiusX && s.radiusY);
         let otherShapes = state.shapes.filter(s => s && (!s.isEllipse || !s.radiusX || !s.radiusY));
 
-        // Сортуємо еліпси, тільки якщо вони є в масиві
         if (ellipses.length > 0) {
             ellipses.sort((a, b) => b.radiusX - a.radiusX);
         }
 
-        // Малюємо інші фігури (кола, лінії)
         otherShapes.forEach(s => {
             if (s.isCircle && s.circleRadius) {
                 let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
@@ -251,7 +277,6 @@
             }
         });
 
-        // МАЛЮЄМО ЗОНИ ALOHA
         ellipses.forEach((s, index) => {
             if (!s.ellipseCenter) return;
             let points = [];
@@ -308,32 +333,24 @@
         selectedIcon = e.target.value;
         textMode = false;
         ellipseMode = false;
-        if (selectedIcon) {
-            deactivateDrawTools();
-        }
+        if (selectedIcon) deactivateDrawTools();
     };
 
     function enableText() { 
-        textMode = true; 
-        ellipseMode = false; 
-        selectedIcon = ""; 
+        textMode = true; ellipseMode = false; selectedIcon = ""; 
         document.getElementById("symbolSelect").value = ""; 
         deactivateDrawTools(); 
     }
     
     function enableEllipseMode() { 
-        ellipseMode = true; 
-        textMode = false; 
-        selectedIcon = ""; 
+        ellipseMode = true; textMode = false; selectedIcon = ""; 
         document.getElementById("symbolSelect").value = ""; 
         deactivateDrawTools(); 
         alert("Режим еліпса активовано! Клікніть на карті в точці аварії (джерело зараження), щоб нанести початок зони."); 
     }
     
     function disableMode() { 
-        textMode = false; 
-        ellipseMode = false; 
-        selectedIcon = ""; 
+        textMode = false; ellipseMode = false; selectedIcon = ""; 
         document.getElementById("symbolSelect").value = ""; 
     }
     
@@ -341,12 +358,8 @@
         if(confirm("Очистити всю обстановку на карті?")) {
             state = { objects: [], shapes: [] };
             localStorage.removeItem("cbrn_state");
-            
-            // Повне програмне очищення інтерфейсу
             drawnItems.clearLayers();
             markersGroup.clearLayers();
-            
-            // Перезапуск сторінки для повної ініціалізації чистого середовища
             location.reload();
         }
     }
@@ -469,24 +482,38 @@
         });
     }
 
-    function setWindDirection(deg) {
+    // Оновлена функція оновлення віджета (Напрямок + Швидкість)
+    function updateWindWidget(deg, speedMs) {
+        // Обертання стрілки
         let visualAngle = (deg + 180) % 360;
         document.getElementById("windArrow").style.transform = `rotate(${visualAngle}deg)`;
         document.getElementById("windDeg").innerText = deg + "°";
+        
+        // Розрахунок швидкості
+        let ms = parseFloat(speedMs) || 0;
+        let kmh = Math.round(ms * 3.6 * 10) / 10; // Множимо на 3.6 та округлюємо до 1 знака
+        
+        document.getElementById("speedMs").innerText = ms;
+        document.getElementById("speedKmh").innerText = kmh;
     }
 
     function applyWind() {
-        let val = document.getElementById("windInput").value;
-        if (val === "" || isNaN(val)) return;
-        let deg = parseInt(val);
-        deg = ((deg % 360) + 360) % 360;
-        setWindDirection(deg);
+        let degVal = document.getElementById("windInput").value;
+        let speedVal = document.getElementById("windSpeedInput").value;
+        
+        let deg = degVal !== "" ? parseInt(degVal) : 0;
+        deg = ((deg % 360) + 360) % 360; // Валідація кута
+        
+        let speed = speedVal !== "" ? parseFloat(speedVal) : 0;
+        if (speed < 0) speed = 0;
+
+        updateWindWidget(deg, speed);
     }
 
     loadState();
     restoreShapes();
     render();
-    setWindDirection(0);
+    updateWindWidget(0, 0); // Початкове значення за замовчуванням
 </script>
 </body>
 </html>
