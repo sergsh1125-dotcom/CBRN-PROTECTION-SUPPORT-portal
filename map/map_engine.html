@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>РХБ Обстановка - Модуль 1.6</title>
+    <title>РХБ Обстановка - Модуль 1.7 (Зони AEGL)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -30,14 +30,13 @@
             background: #e5e3df;
         }
 
-        /* --- СКИДАННЯ ДЕФОЛТНИХ СТИЛІВ LEAFLET ДЛЯ ТЕКСТУ --- */
         .leaflet-div-icon, .cbrn-text-container {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
         }
 
-        /* Панель інструментів (правий верхній кут) */
+        /* Панель інструментів */
         #panel {
             position: absolute;
             top: 10px;
@@ -90,7 +89,7 @@
             gap: 4px;
         }
 
-        /* Оновлений розширений віджет вітру */
+        /* Віджет вітру */
         #windWidget {
             position: absolute;
             left: 10px;
@@ -113,7 +112,6 @@
         }
         .wind-deg { font-size: 12px; font-weight: bold; margin-bottom: 8px; }
         
-        /* Табличка швидкості всередині віджета */
         .wind-speed-table {
             border-top: 1px dashed #FFD600;
             margin-top: 5px;
@@ -199,13 +197,11 @@
 </div>
 
 <script>
-    // Стан системи
     let state = { objects: [], shapes: [] };
     let selectedIcon = "";
     let textMode = false;
     let ellipseMode = false;
 
-    // Ініціалізація карти
     let map = L.map('map').setView([48.3, 31.1], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -213,16 +209,10 @@
     }).addTo(map);
 
     let drawnItems = new L.FeatureGroup().addTo(map);
+    let markersGroup = L.layerGroup().addTo(map);
 
     let drawControl = new L.Control.Draw({
-        draw: {
-            polygon: true,
-            rectangle: true,
-            circle: true,
-            polyline: true,
-            marker: false,
-            circlemarker: false
-        },
+        draw: { polygon: true, rectangle: true, circle: true, polyline: true, marker: false, circlemarker: false },
         edit: { featureGroup: drawnItems }
     }).addTo(map);
 
@@ -247,6 +237,7 @@
         }
     }
 
+    // ВІДМАЛЬОВУВАННЯ ГЕОМЕТРІЇ ТА ЕЛІПСІВ AEGL З ФУНКЦІЄЮ ВИДАЛЕННЯ
     function restoreShapes() {
         drawnItems.clearLayers();
         if (!state || !state.shapes || state.shapes.length === 0) return;
@@ -254,85 +245,122 @@
         let ellipses = state.shapes.filter(s => s && s.isEllipse && s.radiusX && s.radiusY);
         let otherShapes = state.shapes.filter(s => s && (!s.isEllipse || !s.radiusX || !s.radiusY));
 
-        if (ellipses.length > 0) {
-            ellipses.sort((a, b) => b.radiusX - a.radiusX);
-        }
+        // Сортуємо еліпси за розміром ID (тобто за групою створення), щоб правильно накладати шари AEGL
+        ellipses.sort((a, b) => a.id - b.id);
 
-        otherShapes.forEach(s => {
+        // Малюємо стандартні фігури (кола, полігони)
+        otherShapes.forEach((s, idx) => {
+            let layer;
             if (s.isCircle && s.circleRadius) {
                 let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
-                L.circle(center, {
-                    radius: s.circleRadius,
-                    color: "black",
-                    weight: 2,
-                    fillColor: "yellow",
-                    fillOpacity: 0.3
-                }).addTo(drawnItems);
+                layer = L.circle(center, { radius: s.circleRadius, color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
             } else if (s.geojson) {
-                L.geoJSON(s.geojson, {
-                    style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 }
-                }).eachLayer(layer => {
-                    drawnItems.addLayer(layer);
+                layer = L.geoJSON(s.geojson, { style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 } });
+            }
+
+            if (layer) {
+                layer.addTo(drawnItems);
+                // Видалення стандартних фігур по кліку
+                layer.on("click", function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    // Шукаємо індекс за унікальним id або збігом геометрії
+                    let globalIdx = state.shapes.findIndex(shape => shape.id === s.id);
+                    if (globalIdx !== -1) {
+                        state.shapes.splice(globalIdx, 1);
+                        saveState();
+                        restoreShapes();
+                    }
                 });
             }
         });
 
-        ellipses.forEach((s, index) => {
-            if (!s.ellipseCenter) return;
-            let points = [];
-            let centerLat = s.ellipseCenter[0];
-            let centerLng = s.ellipseCenter[1];
-            
-            let windRad = (s.tilt || 0) * Math.PI / 180;
-            let angleRad = windRad + Math.PI; 
-
-            for (let i = 0; i < 64; i++) {
-                let angle = (i / 64) * 2 * Math.PI;
-                
-                let x = s.radiusY * Math.cos(angle); 
-                let y = s.radiusX * Math.sin(angle); 
-
-                let rotatedDx = x * Math.cos(angleRad) + (y + s.radiusX) * Math.sin(angleRad);
-                let rotatedDy = -x * Math.sin(angleRad) + (y + s.radiusX) * Math.cos(angleRad);
-
-                let latOffset = rotatedDy / 111320;
-                let lngOffset = rotatedDx / (111320 * Math.cos(centerLat * Math.PI / 180));
-
-                points.push([centerLat + latOffset, centerLng + lngOffset]);
-            }
-
-            let zoneColor = "#ffcc00"; 
-            let zoneOpacity = 0.3;
-
-            if (ellipses.length === 2) {
-                zoneColor = (index === 0) ? "#ff9900" : "#cc0000"; 
-                zoneOpacity = (index === 0) ? 0.35 : 0.55;
-            } else if (ellipses.length >= 3) {
-                if (index === 0) { 
-                    zoneColor = "#ffcc00"; 
-                    zoneOpacity = 0.25;
-                } else if (index === 1) { 
-                    zoneColor = "#ff9900"; 
-                    zoneOpacity = 0.45;
-                } else { 
-                    zoneColor = "#cc0000"; 
-                    zoneOpacity = 0.65;
-                }
-            }
-
-            L.polygon(points, {
-                color: zoneColor == "#cc0000" ? "#8b0000" : "black", 
-                weight: 2,
-                fillColor: zoneColor,
-                fillOpacity: zoneOpacity
-            }).addTo(drawnItems);
+        // Групуємо еліпси за часом створення (щоб розрізняти різні аварії, якщо нанесено кілька)
+        let groupedEllipses = {};
+        ellipses.forEach(s => {
+            // Групуємо за базовим часом (допускаємо похибку в 1 секунду)
+            let baseId = Math.floor(s.id / 2000) * 2000; 
+            if (!groupedEllipses[baseId]) groupedEllipses[baseId] = [];
+            groupedEllipses[baseId].push(s);
         });
+
+        // Малюємо кожну групу зон AEGL окремо
+        for (let baseId in groupedEllipses) {
+            let currentGroup = groupedEllipses[baseId];
+            // Сортуємо всередині групи від найбільшого радіусу до найменшого
+            currentGroup.sort((a, b) => b.radiusX - a.radiusX);
+
+            currentGroup.forEach((s, index) => {
+                if (!s.ellipseCenter) return;
+                let points = [];
+                let centerLat = s.ellipseCenter[0];
+                let centerLng = s.ellipseCenter[1];
+                
+                let windRad = (s.tilt || 0) * Math.PI / 180;
+                let angleRad = windRad + Math.PI; 
+
+                for (let i = 0; i < 64; i++) {
+                    let angle = (i / 64) * 2 * Math.PI;
+                    let x = s.radiusY * Math.cos(angle); 
+                    let y = s.radiusX * Math.sin(angle); 
+
+                    let rotatedDx = x * Math.cos(angleRad) + (y + s.radiusX) * Math.sin(angleRad);
+                    let rotatedDy = -x * Math.sin(angleRad) + (y + s.radiusX) * Math.cos(angleRad);
+
+                    let latOffset = rotatedDy / 111320;
+                    let lngOffset = rotatedDx / (111320 * Math.cos(centerLat * Math.PI / 180));
+
+                    points.push([centerLat + latOffset, centerLng + lngOffset]);
+                }
+
+                // Визначення кольорів відповідно до трьох рівнів небезпеки AEGL
+                let zoneColor = "#ffcc00"; // AEGL-1 (Жовтий)
+                let zoneOpacity = 0.3;
+                let zoneName = "AEGL-1 (Низький рівень)";
+
+                if (currentGroup.length === 2) {
+                    zoneColor = (index === 0) ? "#ff9900" : "#cc0000"; // AEGL-2 (Помаранчевий), AEGL-3 (Червоний)
+                    zoneOpacity = (index === 0) ? 0.35 : 0.55;
+                    zoneName = (index === 0) ? "AEGL-2 (Середній рівень)" : "AEGL-3 (Високий рівень)";
+                } else if (currentGroup.length >= 3) {
+                    if (index === 0) { 
+                        zoneColor = "#ffcc00"; zoneOpacity = 0.25; zoneName = "AEGL-1";
+                    } else if (index === 1) { 
+                        zoneColor = "#ff9900"; zoneOpacity = 0.45; zoneName = "AEGL-2";
+                    } else { 
+                        zoneColor = "#cc0000"; zoneOpacity = 0.65; zoneName = "AEGL-3";
+                    }
+                }
+
+                let polygonLayer = L.polygon(points, {
+                    color: zoneColor == "#cc0000" ? "#8b0000" : "black", 
+                    weight: 2,
+                    fillColor: zoneColor,
+                    fillOpacity: zoneOpacity
+                }).addTo(drawnItems);
+
+                // --- НОВА ФУНКЦІЯ: ВИДАЛЕННЯ ХМАРИ ПО КЛІКУ ---
+                polygonLayer.on("click", function(e) {
+                    L.DomEvent.stopPropagation(e); // Зупиняємо розповсюдження події, щоб не ставити новий знак
+                    
+                    if(confirm(`Видалити цю хмару забруднення (Пакет рівнів AEGL за ID: ${s.id})?`)) {
+                        // Видаляємо всі еліпси, які належать до цієї конкретної аварії (мають однаковий базовий ID)
+                        state.shapes = state.shapes.filter(shape => {
+                            if (!shape.isEllipse) return true;
+                            let shapeBaseId = Math.floor(shape.id / 2000) * 2000;
+                            return shapeBaseId !== parseInt(baseId);
+                        });
+                        
+                        saveState();
+                        restoreShapes(); // Перемальовуємо оновлену карту
+                    }
+                });
+            });
+        }
     }
 
     document.getElementById("symbolSelect").onchange = function(e) {
         selectedIcon = e.target.value;
-        textMode = false;
-        ellipseMode = false;
+        textMode = false; ellipseMode = false;
         if (selectedIcon) deactivateDrawTools();
     };
 
@@ -346,7 +374,7 @@
         ellipseMode = true; textMode = false; selectedIcon = ""; 
         document.getElementById("symbolSelect").value = ""; 
         deactivateDrawTools(); 
-        alert("Режим еліпса активовано! Клікніть на карті в точці аварії (джерело зараження), щоб нанести початок зони."); 
+        alert("Режим еліпса активовано! Клікніть на карті в точці аварії."); 
     }
     
     function disableMode() { 
@@ -364,8 +392,6 @@
         }
     }
 
-    let markersGroup = L.layerGroup().addTo(map);
-
     function render() {
         markersGroup.clearLayers();
         if (!state || !state.objects) return;
@@ -377,8 +403,7 @@
                     icon: L.divIcon({ 
                         className: "cbrn-text-container", 
                         html: `<span style="display: inline-block; white-space: nowrap; font-size: 14px; font-weight: bold; color: #000000 !important; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff !important;">${obj.text}</span>`,
-                        iconSize: null,       
-                        iconAnchor: [10, 10]  
+                        iconSize: null, iconAnchor: [10, 10]  
                     })
                 });
             } else if (obj.type === "symbol" && obj.icon) {
@@ -411,23 +436,21 @@
         }
 
         if (ellipseMode) {
-            let rX = prompt("Введіть довжину зони (радіус X за вітром) в метрах:", "5000");
+            let rX = prompt("Введіть довжину зони AEGL (радіус X за вітром) в метрах:", "5000");
             if (!rX) return;
-            let rY = prompt("Введіть ширину зони (радіус Y бокове поширення) в метрах:", "2000");
+            let rY = prompt("Введіть ширину зони AEGL (радіус Y бокове поширення) в метрах:", "2000");
             if (!rY) return;
             
             let windInputVal = document.getElementById("windInput").value;
             let angle = windInputVal !== "" ? parseFloat(windInputVal) : 0;
+            
+            let uniqueId = Date.now();
 
-            state.shapes.push({
-                id: Date.now(),
-                isCircle: false,
-                isEllipse: true,
-                ellipseCenter: [e.latlng.lat, e.latlng.lng], 
-                radiusX: parseFloat(rX),
-                radiusY: parseFloat(rY),
-                tilt: angle
-            });
+            // Автоматично створюємо каскад із 3-х підзон для відображення AEGL-1, 2, 3
+            // Кожна зона пропорційно зменшується, формуючи правильний вигляд поширення
+            state.shapes.push({ id: uniqueId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX), radiusY: parseFloat(rY), tilt: angle });
+            state.shapes.push({ id: uniqueId + 1, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.6, radiusY: parseFloat(rY) * 0.6, tilt: angle });
+            state.shapes.push({ id: uniqueId + 2, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.3, radiusY: parseFloat(rY) * 0.3, tilt: angle });
 
             saveState();
             restoreShapes();
@@ -445,17 +468,7 @@
     map.on(L.Draw.Event.CREATED, function (e) {
         let layer = e.layer;
         let type = e.layerType;
-
-        if (layer.setStyle) {
-            layer.setStyle({ color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
-        }
-
-        let shapeData = {
-            id: Date.now(),
-            geojson: layer.toGeoJSON(),
-            isCircle: false,
-            isEllipse: false
-        };
+        let shapeData = { id: Date.now(), geojson: layer.toGeoJSON(), isCircle: false, isEllipse: false };
 
         if (typeof layer.getRadius === 'function' && type !== 'ellipse') {
             shapeData.isCircle = true;
@@ -465,34 +478,28 @@
         }
 
         state.shapes.push(shapeData);
-        drawnItems.addLayer(layer);
         saveState();
+        restoreShapes();
     });
 
     function exportPNG() {
         const area = document.getElementById("capture_area");
         document.getElementById("panel").style.display = "none";
-        
         html2canvas(area, { useCORS: true, allowTaint: true, scale: 2 }).then(function(canvas) {
             const link = document.createElement("a");
-            link.download = `CBRN_Map_SITREP_${Date.now()}.png`;
+            link.download = `CBRN_AEGL_Map_${Date.now()}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
             document.getElementById("panel").style.display = "block";
         });
     }
 
-    // Оновлена функція оновлення віджета (Напрямок + Швидкість)
     function updateWindWidget(deg, speedMs) {
-        // Обертання стрілки
         let visualAngle = (deg + 180) % 360;
         document.getElementById("windArrow").style.transform = `rotate(${visualAngle}deg)`;
         document.getElementById("windDeg").innerText = deg + "°";
-        
-        // Розрахунок швидкості
         let ms = parseFloat(speedMs) || 0;
-        let kmh = Math.round(ms * 3.6 * 10) / 10; // Множимо на 3.6 та округлюємо до 1 знака
-        
+        let kmh = Math.round(ms * 3.6 * 10) / 10;
         document.getElementById("speedMs").innerText = ms;
         document.getElementById("speedKmh").innerText = kmh;
     }
@@ -500,20 +507,17 @@
     function applyWind() {
         let degVal = document.getElementById("windInput").value;
         let speedVal = document.getElementById("windSpeedInput").value;
-        
         let deg = degVal !== "" ? parseInt(degVal) : 0;
-        deg = ((deg % 360) + 360) % 360; // Валідація кута
-        
+        deg = ((deg % 360) + 360) % 360;
         let speed = speedVal !== "" ? parseFloat(speedVal) : 0;
         if (speed < 0) speed = 0;
-
         updateWindWidget(deg, speed);
     }
 
     loadState();
     restoreShapes();
     render();
-    updateWindWidget(0, 0); // Початкове значення за замовчуванням
+    updateWindWidget(0, 0);
 </script>
 </body>
 </html>
