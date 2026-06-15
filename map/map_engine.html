@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Платформа ХБРЯ - Мобільна версія 2.4 (СТАБІЛЬНА)</title>
+    <title>Платформа ХБРЯ - Мобільна версія 2.0</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
-    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.css" />
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.css" />
     <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.min.js"></script>
+
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
     <style>
@@ -19,7 +21,6 @@
             margin: 0;
             padding: 0;
             height: 100%;
-            width: 100%;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
         }
@@ -33,8 +34,7 @@
         #map {
             flex-grow: 1;
             width: 100%;
-            height: 100%;
-            background: #e5e3df; /* Сірий фон, якщо тайли ще вантажаться */
+            background: #e5e3df;
         }
 
         .leaflet-div-icon, .cbrn-text-container {
@@ -43,7 +43,7 @@
             box-shadow: none !important;
         }
 
-        /* --- НИЖНЯ ПАНЕЛЬ УПРАВЛІННЯ --- */
+        /* --- НОВА НИЖНЯ ПАНЕЛЬ УПРАВЛІННЯ (ГОРІЗОНТАЛЬНА, 2 РЯДКИ) --- */
         #panel {
             background: #1a1a1a; 
             color: #fff;
@@ -57,6 +57,7 @@
             gap: 6px;
         }
 
+        /* Рядки всередині панелі */
         .panel-row {
             display: flex;
             flex-wrap: nowrap;
@@ -76,6 +77,7 @@
             box-sizing: border-box;
         }
 
+        /* Елементи першого рядка */
         #symbolSelect {
             flex-grow: 2;
             min-width: 120px;
@@ -99,6 +101,7 @@
         }
         .btn-group-main button:hover { background: #555; }
 
+        /* Елементи другого рядка (Метео та Експорт) */
         .input-container {
             display: flex;
             align-items: center;
@@ -153,7 +156,7 @@
         #windWidget {
             position: absolute;
             left: 10px;
-            bottom: 95px; 
+            bottom: 95px; /* Піднятий вище, щоб не перекривати нижню панель */
             z-index: 9998;
             background: rgba(26, 26, 26, 0.9);
             color: #FFD600;
@@ -179,46 +182,22 @@
             font-size: 10px;
             text-align: left;
         }
-        .wind-speed-row { display: flex; justify-content: space-between; }
+        .wind-speed-row {
+            display: flex;
+            justify-content: space-between;
+        }
         .wind-speed-val { color: #fff; font-weight: bold; }
 
-        /* --- МОДАЛЬНЕ ВІКНО ІНСТРУКЦІЇ --- */
-        .modal {
-            display: none; 
-            position: fixed; 
-            z-index: 10000; 
-            left: 0; top: 0;
-            width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.7);
-            backdrop-filter: blur(3px);
-        }
-        .modal-content {
-            background-color: #1a1a1a;
-            color: #fff;
-            margin: 5% auto; 
-            padding: 20px;
-            border: 2px solid #FFD600;
-            border-radius: 8px;
-            width: 85%;
-            max-width: 650px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 4px 25px rgba(0,0,0,0.7);
-        }
-        .close-btn {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .close-btn:hover { color: #FFD600; }
-        .modal h2 { color: #FFD600; margin-top: 0; font-size: 16px; border-bottom: 2px dashed #FFD600; padding-bottom: 8px; text-align: center; font-weight: bold; line-height: 1.4; }
-        .modal h3 { color: #FFD600; font-size: 14px; margin-top: 15px; margin-bottom: 8px; border-left: 3px solid #FFD600; padding-left: 6px; }
-        .modal p, .modal li { font-size: 13px; line-height: 1.6; color: #ddd; text-align: justify; }
-        .modal ul { padding-left: 20px; margin-top: 5px; }
-        .modal ol { padding-left: 20px; margin-top: 5px; }
+        /* Зміщення дефолтних кнопок Leaflet у мобільній версії */
+        .leaflet-top.leaflet-left { top: 10px; }
 
+        @media print {
+            #panel { display: none !important; }
+            #windWidget { border: 1px solid #000; color: #000; background: white; bottom: 10px; }
+            .wind-speed-val { color: #000; }
+        }
+
+        /* Адаптація для зовсім маленьких екранів смартфонів */
         @media (max-width: 480px) {
             #panel { padding: 6px; }
             .panel-row { gap: 4px; }
@@ -226,7 +205,6 @@
             .input-container { height: 30px; padding: 0 3px; }
             .input-container input { width: 35px !important; }
             #windWidget { bottom: 90px; width: 70px; }
-            .modal-content { width: 92%; margin: 8% auto; padding: 15px; }
         }
     </style>
 </head>
@@ -247,11 +225,11 @@
     <div id="panel">
         <div class="panel-row">
             <select id="symbolSelect">
-                <option value="">-- Оберіть знак --</option>
-                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_radiation.svg">Точка радіоактивного забруднення</option>
-                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_chemical.svg">Точка хімічного забруднення</option>
-                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_biological.svg">Точка біологічного зараження</option>
-                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/nuclear_blast.svg">Епіцентр ядерного вибуху</option>
+                <option value="">-- Знак РХБЗ --</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_radiation.svg">Точка рад. забруднення</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_chemical.svg">Точка хім. забруднення</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_biological.svg">Точка біол. зараження</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/nuclear_blast.svg">Епіцентр яд. вибуху</option>
                 <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/radioactive_site.svg">Радіаційно небезпечний об’єкт</option>
                 <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/chemical_hazard_site.svg">Хімічно небезпечний об’єкт</option>
                 <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/biological_hazard_site.svg">Біологічно небезпечний об’єкт</option>
@@ -263,77 +241,26 @@
             <div class="btn-group-main">
                 <button onclick="enableText()">Текст</button>
                 <button style="background:#5c3a21;" onclick="enableEllipseMode()">Еліпс</button>
-                <button style="background:#0d47a1;" onclick="openModal()">📄 Інструкція</button>
-                <button style="background:#8b0000;" onclick="clearAll()">Очистити</button>
+                <button style="background:#8b0000;" onclick="clearAll()">Clear</button>
             </div>
         </div>
 
         <div class="panel-row">
             <div class="input-container">
-                <span>Напрямок вітру:</span>
+                <span>Вітер°:</span>
                 <input id="windInput" type="number" min="0" max="360" value="0">
             </div>
+
             <div class="input-container">
-                <span>Швидкість вітру:</span>
+                <span>м/с:</span>
                 <input id="windSpeedInput" type="number" min="0" max="50" step="0.1" value="0">
             </div>
-            <button class="btn-action" onclick="applyWind()">Застосувати метео</button>
-            <div style="flex-grow: 1;"></div>
-            <button class="btn-export" style="background:#2e7d32;" onclick="exportPNG()">📸 PNG</button>
+
+            <button class="btn-action" onclick="applyWind()">Оновити Метео</button>
+            
+            <div style="flex-grow: 1;"></div> <button class="btn-export" style="background:#2e7d32;" onclick="exportPNG()">📸 PNG</button>
             <button class="btn-export" style="background:#1565c0;" onclick="window.print()">🖨 PDF</button>
         </div>
-    </div>
-</div>
-
-<div id="instructionModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeModal()">&times;</span>
-        <h2>ІНСТРУКЦІЯ<br>щодо нанесення обстановки на робочу карту<br>Платформи підтримки заходів реагування на ХБРЯ інциденти</h2>
-        
-        <h3>1. Нанесення умовних знаків та тексту</h3>
-        <p><b>Умовні знаки:</b> На панелі управління знаками (під картою) натисніть кнопку «Оберіть знак», виберіть умовний знак з випадаючого списку та клікніть на карті точку для його нанесення.</p>
-        <p><b>Текстові підписи:</b> На панелі управління знаками натисніть кнопку «Текст», клікніть на карті точку, введіть текст у діалоговому вікні та нажміть ОК.</p>
-        <p><b>Видалення умовного знаку/тексту:</b> на карті клікніть по нанесеному знаку або тексту для його видалення.</p>
-        <p><b>Коло, прямокутник:</b> На панелі Leaflet (на карті вгорі ліворуч) виберіть:</p>
-        <ul>
-            <li><b>коло</b> - на карті клікніть центр кола та розтягніть коло з нажатою лівою клавішею мишки до необхідного розміру;</li>
-            <li><b>прямокутник</b> - на карті клікніть точку кута прямокутника та розтягніть прямокутник з нажатою лівою клавішею мишки до необхідного розміру;</li>
-            <li><b>багатокутник</b> - на карті клікніть послідовно точки багатокутника, при цьому остання точка кліку збігається з першою точкою.</li>
-        </ul>
-
-        <h3>2. Нанесення зон хімічного забруднення за міжнародними рівнями токсичного впливу (AEGL-1, AEGL-2, AEGL-3)</h3>
-        <ol>
-            <li>Перед початком нанесення зон хімічного забруднення за міжнародними рівнями токсичного впливу (AEGL-1, AEGL-2, AEGL-3) на панелі управління знаками введіть у поле «Напрямок вітру» значення напрямку вітру в градусах (напрямок від 0 до 360° - «звідкіля дує вітер»), а також для інформації - у полі «Швидкість вітру» введіть значення швидкості вітру у м/с та натисніть кнопку «Застосувати метео».</li>
-            <li>Натисніть кнопку «Еліпс».</li>
-            <li>Клікніть на карті (на комп’ютері — мишкою, в смартфоні — торкніться пальцем) у точці хімічної аварії (застосування хімічної зброї).</li>
-            <li>В діалогових вікнах послідовно введіть:
-                <ul>
-                    <li>максимальну довжину хмари (за вітром) у метрах.</li>
-                    <li>максимальну ширину хмари (бокове поширення) у метрах.</li>
-                </ul>
-            </li>
-        </ol>
-        <p>Система автоматично побудує трирівневий каскад зон:</p>
-        <ul>
-            <li>🟡 <b>AEGL-1 (жовта, 100% розміру):</b> зона початкового/низького впливу.</li>
-            <li>🟠 <b>AEGL-2 (помаранчева, 60% розміру):</b> зона середньої небезпеки (ризик для здоров'я).</li>
-            <li>🔴 <b>AEGL-3 (Червона, 30% розміру):</b> зона смертельної небезпеки.</li>
-        </ul>
-        <p><b>Видалення зони хімічного забруднення:</b> Якщо необхідно видалити зону хімічного забруднення - клікніть по центру еліпсу на карті (на комп’ютері — мишкою, в смартфоні — торкніться пальцем) та підтвердіть видалення.</p>
-
-        <h3>3. Вимірювання відстаней (лінійка)</h3>
-        <ol>
-            <li>На панелі Leaflet (на карті вгорі ліворуч) виберіть «Малювання лінії» (лінія з точками).</li>
-            <li>Послідовно клікайте по карті (наприклад, від епіцентру хмари до населеного пункту), відстань автоматично відображатиметься в метрах або кілометрах.</li>
-            <li>Для завершення вимірювання двічі клікніть на останній точці.</li>
-            <li>Для видалення лінійки натисніть іконку Смітника у лівій панелі та клікніть по лінії.</li>
-        </ol>
-
-        <h3>4. Очищення та експорт</h3>
-        <ul>
-            <li><b>📸 PNG / 🖨 PDF:</b> Кнопки внизу правої панелі дозволяють миттєво зберегти знімок поточної карти або роздрукувати її.</li>
-            <li>Кнопка <b>«Очистити»</b> повністю видаляет всю обстановку та перезавантажує карту до чистого стану.</li>
-        </ul>
     </div>
 </div>
 
@@ -343,11 +270,10 @@
     let textMode = false;
     let ellipseMode = false;
 
-    // Створення карти (через те, що бібліотеки Leaflet завантажені на початку файлу, працює залізобетонно)
     let map = L.map('map', { zoomControl: true }).setView([48.3, 31.1], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-        maxZoom: 19, 
-        attribution: '© OpenStreetMap' 
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
     }).addTo(map);
 
     let drawnItems = new L.FeatureGroup().addTo(map);
@@ -359,21 +285,19 @@
     }).addTo(map);
 
     map.pm.addControls({
-        position: 'topleft', drawMarker: false, drawCircleMarker: false, drawPolyline: true,
-        drawRectangle: false, drawPolygon: false, drawCircle: false, editMode: false, dragMode: false, cutPolygon: false, removalMode: true
+        position: 'topleft',
+        drawMarker: false, drawCircleMarker: false, drawPolyline: true,
+        drawRectangle: false, drawPolygon: false, drawCircle: false,
+        editMode: false, dragMode: false, cutPolygon: false, removalMode: true
     });
-    map.pm.setGlobalOptions({ measurements: { display: true, totalLength: true, segmentLength: true } });
+
+    map.pm.setGlobalOptions({
+        measurements: { display: true, totalLength: true, segmentLength: true }
+    });
     map.pm.setLang('uk');
 
-    // Модальне вікно інструкції
-    function openModal() { document.getElementById("instructionModal").style.display = "block"; }
-    function closeModal() { document.getElementById("instructionModal").style.display = "none"; }
-    window.onclick = function(event) {
-        let modal = document.getElementById("instructionModal");
-        if (event.target == modal) { modal.style.display = "none"; }
-    }
-
     function saveState() { localStorage.setItem("cbrn_state", JSON.stringify(state)); }
+    
     function loadState() {
         let saved = localStorage.getItem("cbrn_state");
         if (saved) {
@@ -381,13 +305,19 @@
                 state = JSON.parse(saved);
                 if (!state.objects) state.objects = [];
                 if (!state.shapes) state.shapes = [];
-            } catch(e) { state = { objects: [], shapes: [] }; }
+            } catch(e) {
+                state = { objects: [], shapes: [] };
+            }
         }
     }
 
     function deactivateDrawTools() {
-        if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) { map._toolbars.draw._activeMode.handler.disable(); }
-        if (map.pm.globalDrawModeEnabled()) { map.pm.disableDraw(); }
+        if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) {
+            map._toolbars.draw._activeMode.handler.disable();
+        }
+        if (map.pm.globalDrawModeEnabled()) {
+            map.pm.disableDraw();
+        }
     }
 
     function restoreShapes() {
@@ -396,6 +326,7 @@
 
         let ellipses = state.shapes.filter(s => s && s.isEllipse && s.radiusX && s.radiusY);
         let otherShapes = state.shapes.filter(s => s && (!s.isEllipse || !s.radiusX || !s.radiusY));
+
         ellipses.sort((a, b) => a.id - b.id);
 
         otherShapes.forEach((s) => {
@@ -406,12 +337,17 @@
             } else if (s.geojson) {
                 layer = L.geoJSON(s.geojson, { style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 } });
             }
+
             if (layer) {
                 layer.addTo(drawnItems);
                 layer.on("click", function(e) {
                     L.DomEvent.stopPropagation(e);
                     let globalIdx = state.shapes.findIndex(shape => shape.id === s.id);
-                    if (globalIdx !== -1) { state.shapes.splice(globalIdx, 1); saveState(); restoreShapes(); }
+                    if (globalIdx !== -1) {
+                        state.shapes.splice(globalIdx, 1);
+                        saveState();
+                        restoreShapes();
+                    }
                 });
             }
         });
@@ -426,32 +362,47 @@
         for (let baseId in groupedEllipses) {
             let currentGroup = groupedEllipses[baseId];
             currentGroup.sort((a, b) => b.radiusX - a.radiusX);
+
             currentGroup.forEach((s, index) => {
                 if (!s.ellipseCenter) return;
                 let points = [];
-                let centerLat = s.ellipseCenter[0]; let centerLng = s.ellipseCenter[1];
-                let windRad = (s.tilt || 0) * Math.PI / 180; let angleRad = windRad + Math.PI; 
+                let centerLat = s.ellipseCenter[0];
+                let centerLng = s.ellipseCenter[1];
+                
+                let windRad = (s.tilt || 0) * Math.PI / 180;
+                let angleRad = windRad + Math.PI; 
 
                 for (let i = 0; i < 64; i++) {
                     let angle = (i / 64) * 2 * Math.PI;
-                    let x = s.radiusY * Math.cos(angle); let y = s.radiusX * Math.sin(angle); 
+                    let x = s.radiusY * Math.cos(angle); 
+                    let y = s.radiusX * Math.sin(angle); 
+
                     let rotatedDx = x * Math.cos(angleRad) + (y + s.radiusX) * Math.sin(angleRad);
                     let rotatedDy = -x * Math.sin(angleRad) + (y + s.radiusX) * Math.cos(angleRad);
+
                     let latOffset = rotatedDy / 111320;
                     let lngOffset = rotatedDx / (111320 * Math.cos(centerLat * Math.PI / 180));
+
                     points.push([centerLat + latOffset, centerLng + lngOffset]);
                 }
 
-                let zoneColor = "#ffcc00"; let zoneOpacity = 0.3;
+                let zoneColor = "#ffcc00"; 
+                let zoneOpacity = 0.3;
+
                 if (currentGroup.length === 2) {
-                    zoneColor = (index === 0) ? "#ff9900" : "#cc0000"; zoneOpacity = (index === 0) ? 0.35 : 0.55;
+                    zoneColor = (index === 0) ? "#ff9900" : "#cc0000"; 
+                    zoneOpacity = (index === 0) ? 0.35 : 0.55;
                 } else if (currentGroup.length >= 3) {
                     if (index === 0) { zoneColor = "#ffcc00"; zoneOpacity = 0.25; } 
                     else if (index === 1) { zoneColor = "#ff9900"; zoneOpacity = 0.45; } 
                     else { zoneColor = "#cc0000"; zoneOpacity = 0.65; }
                 }
 
-                let polygonLayer = L.polygon(points, { color: zoneColor == "#cc0000" ? "#8b0000" : "black", weight: 2, fillColor: zoneColor, fillOpacity: zoneOpacity }).addTo(drawnItems);
+                let polygonLayer = L.polygon(points, {
+                    color: zoneColor == "#cc0000" ? "#8b0000" : "black", 
+                    weight: 2, fillColor: zoneColor, fillOpacity: zoneOpacity
+                }).addTo(drawnItems);
+
                 polygonLayer.on("click", function(e) {
                     L.DomEvent.stopPropagation(e);
                     if(confirm(`Видалити цю хмару забруднення AEGL?`)) {
@@ -460,7 +411,8 @@
                             let shapeBaseId = Math.floor(shape.id / 2000) * 2000;
                             return shapeBaseId !== parseInt(baseId);
                         });
-                        saveState(); restoreShapes();
+                        saveState();
+                        restoreShapes();
                     }
                 });
             });
@@ -468,10 +420,161 @@
     }
 
     document.getElementById("symbolSelect").onchange = function(e) {
-        selectedIcon = e.target.value; 
-        textMode = false; 
-        ellipseMode = false;
+        selectedIcon = e.target.value;
+        textMode = false; ellipseMode = false;
         if (selectedIcon) deactivateDrawTools();
     };
 
-    function enableText
+    function enableText() { 
+        textMode = true; ellipseMode = false; selectedIcon = ""; 
+        document.getElementById("symbolSelect").value = ""; 
+        deactivateDrawTools(); 
+    }
+    
+    function enableEllipseMode() { 
+        ellipseMode = true; textMode = false; selectedIcon = ""; 
+        document.getElementById("symbolSelect").value = ""; 
+        deactivateDrawTools(); 
+    }
+    
+    function clearAll() {
+        if(confirm("Очистити всю обстановку на карті?")) {
+            state = { objects: [], shapes: [] };
+            localStorage.removeItem("cbrn_state");
+            drawnItems.clearLayers();
+            markersGroup.clearLayers();
+            location.reload();
+        }
+    }
+
+    function render() {
+        markersGroup.clearLayers();
+        if (!state || !state.objects) return;
+
+        state.objects.forEach((obj, index) => {
+            let marker;
+            if (obj.type === "text") {
+                marker = L.marker([obj.lat, obj.lng], {
+                    icon: L.divIcon({ 
+                        className: "cbrn-text-container", 
+                        html: `<span style="display: inline-block; white-space: nowrap; font-size: 13px; font-weight: bold; color: #000; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff !important;">${obj.text}</span>`,
+                        iconSize: null, iconAnchor: [10, 10]  
+                    })
+                });
+            } else if (obj.type === "symbol" && obj.icon) {
+                marker = L.marker([obj.lat, obj.lng], {
+                    icon: L.icon({ iconUrl: obj.icon, iconSize: [28, 28], iconAnchor: [14, 14] })
+                });
+            }
+
+            if (marker) {
+                marker.addTo(markersGroup);
+                marker.on("click", function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    state.objects.splice(index, 1);
+                    saveState();
+                    render();
+                });
+            }
+        });
+    }
+
+    map.on("click", function(e) {
+        if (map.pm.globalDrawModeEnabled()) return;
+
+        if (textMode) {
+            let txt = prompt("Введіть оперативно-тактичний підпис:");
+            if (!txt) return;
+            state.objects.push({ type: "text", lat: e.latlng.lat, lng: e.latlng.lng, text: txt });
+            saveState();
+            render();
+            textMode = false;
+            return;
+        }
+
+        if (ellipseMode) {
+            let rX = prompt("Довжина зони AEGL (радіус X за вітром) в метрах:", "5000");
+            if (!rX) return;
+            let rY = prompt("Ширина зони AEGL (радіус Y) в метрах:", "2000");
+            if (!rY) return;
+            
+            let windInputVal = document.getElementById("windInput").value;
+            let angle = windInputVal !== "" ? parseFloat(windInputVal) : 0;
+            let uniqueId = Date.now();
+
+            state.shapes.push({ id: uniqueId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX), radiusY: parseFloat(rY), tilt: angle });
+            state.shapes.push({ id: uniqueId + 1, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.6, radiusY: parseFloat(rY) * 0.6, tilt: angle });
+            state.shapes.push({ id: uniqueId + 2, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.3, radiusY: parseFloat(rY) * 0.3, tilt: angle });
+
+            saveState();
+            restoreShapes();
+            ellipseMode = false;
+            return;
+        }
+
+        if (selectedIcon) {
+            state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
+            saveState();
+            render();
+        }
+    });
+
+    map.on(L.Draw.Event.CREATED, function (e) {
+        let layer = e.layer;
+        let type = e.layerType;
+        let shapeData = { id: Date.now(), geojson: layer.toGeoJSON(), isCircle: false, isEllipse: false };
+
+        if (typeof layer.getRadius === 'function' && type !== 'ellipse') {
+            shapeData.isCircle = true;
+            shapeData.circleRadius = layer.getRadius();
+            let latlng = layer.getLatLng();
+            shapeData.circleCenter = [latlng.lat, latlng.lng];
+        }
+
+        state.shapes.push(shapeData);
+        saveState();
+        restoreShapes();
+    });
+
+    function exportPNG() {
+        const area = document.getElementById("capture_area");
+        document.getElementById("panel").style.display = "none";
+        document.getElementById("windWidget").style.bottom = "10px"; // Тимчасово опускаємо віджет для красивого кадру
+        
+        html2canvas(area, { useCORS: true, allowTaint: true, scale: 2 }).then(function(canvas) {
+            const link = document.createElement("a");
+            link.download = `CBRN_Mobile_SITREP_${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            document.getElementById("panel").style.display = "flex";
+            document.getElementById("windWidget").style.bottom = "95px";
+        });
+    }
+
+    function updateWindWidget(deg, speedMs) {
+        let visualAngle = (deg + 180) % 360;
+        document.getElementById("windArrow").style.transform = `rotate(${visualAngle}deg)`;
+        document.getElementById("windDeg").innerText = deg + "°";
+        let ms = parseFloat(speedMs) || 0;
+        let kmh = Math.round(ms * 3.6 * 10) / 10;
+        document.getElementById("speedMs").innerText = ms;
+        document.getElementById("speedKmh").innerText = kmh;
+    }
+
+    function applyWind() {
+        let degVal = document.getElementById("windInput").value;
+        let speedVal = document.getElementById("windSpeedInput").value;
+        let deg = degVal !== "" ? parseInt(degVal) : 0;
+        deg = ((deg % 360) + 360) % 360;
+        let speed = speedVal !== "" ? parseFloat(speedVal) : 0;
+        if (speed < 0) speed = 0;
+        updateWindWidget(deg, speed);
+    }
+
+    loadState();
+    restoreShapes();
+    render();
+    updateWindWidget(0, 0);
+</script>
+</body>
+</html>
