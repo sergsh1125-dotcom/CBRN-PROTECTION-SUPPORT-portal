@@ -291,10 +291,17 @@
         editMode: false, dragMode: false, cutPolygon: false, removalMode: true
     });
 
-    map.pm.setGlobalOptions({
-        measurements: { display: true, totalLength: true, segmentLength: true }
-    });
-    map.pm.setLang('uk');
+   // Знайдіть у вашому коді налаштування Geoman і приведіть їх до такого вигляду:
+map.pm.setGlobalOptions({ 
+    measurements: { 
+        display: true,       // Головний перемикач відображення розмірів
+        totalLength: true,   // Для ліній
+        segmentLength: true, // Для багатокутників
+        radius: true,        // КРИТИЧНО ДЛЯ КОЛА: показує радіус
+        area: true           // Показує площу фігур (за бажанням)
+    } 
+});
+map.pm.setLang('uk'); // Переконайтеся, що мова українська (щоб писало "Радіус: ... м")
 
     function saveState() { localStorage.setItem("cbrn_state", JSON.stringify(state)); }
     
