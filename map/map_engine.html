@@ -3,18 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Платформа ХБРЯ - Мобільна версія 2.2 (Офіційна Інструкція)</title>
+    <title>Платформа ХБРЯ - Мобільна версія 2.3 (Виправлена)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-
     <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.css" />
-    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.min.js"></script>
-
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
     <style>
         html, body {
@@ -34,6 +27,7 @@
         #map {
             flex-grow: 1;
             width: 100%;
+            height: 100%;
             background: #e5e3df;
         }
 
@@ -337,14 +331,23 @@
     </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
 <script>
     let state = { objects: [], shapes: [] };
     let selectedIcon = "";
     let textMode = false;
     let ellipseMode = false;
 
+    // Ініціалізація карти (тепер виконується безвідмовно)
     let map = L.map('map', { zoomControl: true }).setView([48.3, 31.1], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+        maxZoom: 19, 
+        attribution: '© OpenStreetMap' 
+    }).addTo(map);
 
     let drawnItems = new L.FeatureGroup().addTo(map);
     let markersGroup = L.layerGroup().addTo(map);
@@ -361,7 +364,7 @@
     map.pm.setGlobalOptions({ measurements: { display: true, totalLength: true, segmentLength: true } });
     map.pm.setLang('uk');
 
-    // ФУНКЦІЇ МОДАЛЬНОГО ВІКНОУ ІНСТРУКЦІЇ
+    // ФУНКЦІЇ МОДАЛЬНОГО ВІКНА
     function openModal() { document.getElementById("instructionModal").style.display = "block"; }
     function closeModal() { document.getElementById("instructionModal").style.display = "none"; }
     window.onclick = function(event) {
@@ -390,26 +393,4 @@
         drawnItems.clearLayers();
         if (!state || !state.shapes || state.shapes.length === 0) return;
 
-        let ellipses = state.shapes.filter(s => s && s.isEllipse && s.radiusX && s.radiusY);
-        let otherShapes = state.shapes.filter(s => s && (!s.isEllipse || !s.radiusX || !s.radiusY));
-        ellipses.sort((a, b) => a.id - b.id);
-
-        otherShapes.forEach((s) => {
-            let layer;
-            if (s.isCircle && s.circleRadius) {
-                let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
-                layer = L.circle(center, { radius: s.circleRadius, color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
-            } else if (s.geojson) {
-                layer = L.geoJSON(s.geojson, { style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 } });
-            }
-            if (layer) {
-                layer.addTo(drawnItems);
-                layer.on("click", function(e) {
-                    L.DomEvent.stopPropagation(e);
-                    let globalIdx = state.shapes.findIndex(shape => shape.id === s.id);
-                    if (globalIdx !== -1) { state.shapes.splice(globalIdx, 1); saveState(); restoreShapes(); }
-                });
-            }
-        });
-
-        let grouped
+        let
