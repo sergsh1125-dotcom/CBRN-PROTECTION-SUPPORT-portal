@@ -3,17 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Платформа ХБРЯ - Мобільна версія 2.3 (Виправлена)</title>
+    <title>Платформа ХБРЯ - Мобільна версія 2.4 (СТАБІЛЬНА)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
     <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.css" />
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
     <style>
         html, body {
             margin: 0;
             padding: 0;
             height: 100%;
+            width: 100%;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
         }
@@ -28,7 +34,7 @@
             flex-grow: 1;
             width: 100%;
             height: 100%;
-            background: #e5e3df;
+            background: #e5e3df; /* Сірий фон, якщо тайли ще вантажаться */
         }
 
         .leaflet-div-icon, .cbrn-text-container {
@@ -326,15 +332,10 @@
         <h3>4. Очищення та експорт</h3>
         <ul>
             <li><b>📸 PNG / 🖨 PDF:</b> Кнопки внизу правої панелі дозволяють миттєво зберегти знімок поточної карти або роздрукувати її.</li>
-            <li>Кнопка <b>«Очистити»</b> повністю видаляє всю обстановку та перезавантажує карту до чистого стану.</li>
+            <li>Кнопка <b>«Очистити»</b> повністю видаляет всю обстановку та перезавантажує карту до чистого стану.</li>
         </ul>
     </div>
 </div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.min.js"></script>
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <script>
     let state = { objects: [], shapes: [] };
@@ -342,7 +343,7 @@
     let textMode = false;
     let ellipseMode = false;
 
-    // Ініціалізація карти (тепер виконується безвідмовно)
+    // Створення карти (через те, що бібліотеки Leaflet завантажені на початку файлу, працює залізобетонно)
     let map = L.map('map', { zoomControl: true }).setView([48.3, 31.1], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
         maxZoom: 19, 
@@ -364,7 +365,7 @@
     map.pm.setGlobalOptions({ measurements: { display: true, totalLength: true, segmentLength: true } });
     map.pm.setLang('uk');
 
-    // ФУНКЦІЇ МОДАЛЬНОГО ВІКНА
+    // Модальне вікно інструкції
     function openModal() { document.getElementById("instructionModal").style.display = "block"; }
     function closeModal() { document.getElementById("instructionModal").style.display = "none"; }
     window.onclick = function(event) {
@@ -393,4 +394,84 @@
         drawnItems.clearLayers();
         if (!state || !state.shapes || state.shapes.length === 0) return;
 
-        let
+        let ellipses = state.shapes.filter(s => s && s.isEllipse && s.radiusX && s.radiusY);
+        let otherShapes = state.shapes.filter(s => s && (!s.isEllipse || !s.radiusX || !s.radiusY));
+        ellipses.sort((a, b) => a.id - b.id);
+
+        otherShapes.forEach((s) => {
+            let layer;
+            if (s.isCircle && s.circleRadius) {
+                let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
+                layer = L.circle(center, { radius: s.circleRadius, color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
+            } else if (s.geojson) {
+                layer = L.geoJSON(s.geojson, { style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 } });
+            }
+            if (layer) {
+                layer.addTo(drawnItems);
+                layer.on("click", function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    let globalIdx = state.shapes.findIndex(shape => shape.id === s.id);
+                    if (globalIdx !== -1) { state.shapes.splice(globalIdx, 1); saveState(); restoreShapes(); }
+                });
+            }
+        });
+
+        let groupedEllipses = {};
+        ellipses.forEach(s => {
+            let baseId = Math.floor(s.id / 2000) * 2000; 
+            if (!groupedEllipses[baseId]) groupedEllipses[baseId] = [];
+            groupedEllipses[baseId].push(s);
+        });
+
+        for (let baseId in groupedEllipses) {
+            let currentGroup = groupedEllipses[baseId];
+            currentGroup.sort((a, b) => b.radiusX - a.radiusX);
+            currentGroup.forEach((s, index) => {
+                if (!s.ellipseCenter) return;
+                let points = [];
+                let centerLat = s.ellipseCenter[0]; let centerLng = s.ellipseCenter[1];
+                let windRad = (s.tilt || 0) * Math.PI / 180; let angleRad = windRad + Math.PI; 
+
+                for (let i = 0; i < 64; i++) {
+                    let angle = (i / 64) * 2 * Math.PI;
+                    let x = s.radiusY * Math.cos(angle); let y = s.radiusX * Math.sin(angle); 
+                    let rotatedDx = x * Math.cos(angleRad) + (y + s.radiusX) * Math.sin(angleRad);
+                    let rotatedDy = -x * Math.sin(angleRad) + (y + s.radiusX) * Math.cos(angleRad);
+                    let latOffset = rotatedDy / 111320;
+                    let lngOffset = rotatedDx / (111320 * Math.cos(centerLat * Math.PI / 180));
+                    points.push([centerLat + latOffset, centerLng + lngOffset]);
+                }
+
+                let zoneColor = "#ffcc00"; let zoneOpacity = 0.3;
+                if (currentGroup.length === 2) {
+                    zoneColor = (index === 0) ? "#ff9900" : "#cc0000"; zoneOpacity = (index === 0) ? 0.35 : 0.55;
+                } else if (currentGroup.length >= 3) {
+                    if (index === 0) { zoneColor = "#ffcc00"; zoneOpacity = 0.25; } 
+                    else if (index === 1) { zoneColor = "#ff9900"; zoneOpacity = 0.45; } 
+                    else { zoneColor = "#cc0000"; zoneOpacity = 0.65; }
+                }
+
+                let polygonLayer = L.polygon(points, { color: zoneColor == "#cc0000" ? "#8b0000" : "black", weight: 2, fillColor: zoneColor, fillOpacity: zoneOpacity }).addTo(drawnItems);
+                polygonLayer.on("click", function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    if(confirm(`Видалити цю хмару забруднення AEGL?`)) {
+                        state.shapes = state.shapes.filter(shape => {
+                            if (!shape.isEllipse) return true;
+                            let shapeBaseId = Math.floor(shape.id / 2000) * 2000;
+                            return shapeBaseId !== parseInt(baseId);
+                        });
+                        saveState(); restoreShapes();
+                    }
+                });
+            });
+        }
+    }
+
+    document.getElementById("symbolSelect").onchange = function(e) {
+        selectedIcon = e.target.value; 
+        textMode = false; 
+        ellipseMode = false;
+        if (selectedIcon) deactivateDrawTools();
+    };
+
+    function enableText
