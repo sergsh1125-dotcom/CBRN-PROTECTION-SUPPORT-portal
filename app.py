@@ -129,7 +129,7 @@ with col_right:
     st.markdown('<p class="module-header">МОДУЛЬ 3. РОЗРАХУНКИ</p>', unsafe_allow_html=True)
     st.link_button("3.1. Калькулятор дози (Ядерний вибух)", "https://sergsh1125-dotcom.github.io/radiation-calculator/")
     st.link_button("3.2. Калькулятор дози (Аварія на АЕС)", "https://sergsh1125-dotcom.github.io/radiation-doza/")
-    st.link_button("3.3. Розрахунок часу перебування", "https://sergsh1125-dotcom.github.io/calculator-time/")
+    st.link_button("3.3. Розрахунок часу опромінення", "https://sergsh1125-dotcom.github.io/calculator-time/")
 
     st.markdown('<p class="module-header">МОДУЛЬ 4. ДОВІДКА</p>', unsafe_allow_html=True)
     st.link_button("4.1. Укргідрометеоцентр", "https://www.meteo.gov.ua/")
