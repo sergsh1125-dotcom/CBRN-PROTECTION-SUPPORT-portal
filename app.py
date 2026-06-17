@@ -137,7 +137,7 @@ with col_right:
     st.link_button("4.3. СОП 1.1/РХБЗ: Демеркуризація\nСОП 1.2: Дії підрозділів при НС з НХР", "https://kyiv.dsns.gov.ua/navchalniy-centr-gu/sluzhbova-pidgotovka/normativno-pravovo-akti")
 
     DOCS_FOLDER = "docs"
-    with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ", expanded=False):
+    with st.expander("4.4. ФОРМАЛІЗОВАНІ ДОКУМЕНТИ ТА ДОВІДНИКИ", expanded=False):
         if os.path.isdir(DOCS_FOLDER):
             allowed_extensions = (".docx", ".pdf", ".xlsx", ".csv", ".txt", ".pptx")
             doc_files = sorted([f for f in os.listdir(DOCS_FOLDER) if f.lower().endswith(allowed_extensions)])
