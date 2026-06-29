@@ -239,6 +239,7 @@
             </select>
 
             <div class="btn-group-main">
+                <button onclick="finishSymbolDrawing()" style="background:#00796b;">Завершити знак</button>
                 <button onclick="enableText()">Текст</button>
                 <button style="background:#5c3a21;" onclick="enableEllipseMode()">Еліпс</button>
                 <button style="background:#8b0000;" onclick="clearAll()">Очистити</button>
@@ -291,7 +292,7 @@
         editMode: false, dragMode: false, cutPolygon: false, removalMode: true
     });
 
-   // Знайдіть у вашому коді налаштування Geoman і приведіть їх до такого вигляду:
+    // Знайдіть у вашому коді налаштування Geoman і приведіть їх до такого вигляду:
 map.pm.setGlobalOptions({ 
     measurements: { 
         display: true,       // Головний перемикач відображення розмірів
@@ -442,6 +443,14 @@ map.pm.setLang('uk'); // Переконайтеся, що мова україн�
         ellipseMode = true; textMode = false; selectedIcon = ""; 
         document.getElementById("symbolSelect").value = ""; 
         deactivateDrawTools(); 
+    }
+
+    function finishSymbolDrawing() {
+        selectedIcon = "";
+        textMode = false;
+        ellipseMode = false;
+        document.getElementById("symbolSelect").value = "";
+        deactivateDrawTools();
     }
     
     function clearAll() {
