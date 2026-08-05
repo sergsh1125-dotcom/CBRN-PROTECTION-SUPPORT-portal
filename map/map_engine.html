@@ -1,229 +1,596 @@
-import streamlit as st
-import pandas as pd
-import folium
-from streamlit_folium import st_folium
-import os
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Платформа ХБРЯ - Мобільна версія 2.0</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-# ===============================
-# 1. Налаштування сторінки
-# ===============================
-st.set_page_config(page_title="RAD-Mobile Pro", page_icon="☢️", layout="centered")
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
-DB_FILE = "database.csv"
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.css" />
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.min.js"></script>
 
-if "data" not in st.session_state:
-    if os.path.exists(DB_FILE):
-        st.session_state.data = pd.read_csv(DB_FILE)
-    else:
-        st.session_state.data = pd.DataFrame(columns=["lat", "lon", "value", "unit", "time"])
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
-def save_to_disk():
-    st.session_state.data.to_csv(DB_FILE, index=False)
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+        #capture_area {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        #map {
+            flex-grow: 1;
+            width: 100%;
+            background: #e5e3df;
+        }
 
-st.markdown("""
-<style>
-    #MainMenu, footer, header {visibility: hidden;}
-    .stButton>button {width: 100%; height: 55px; font-weight: bold; border-radius: 12px;}
-    .undo-btn>div>button {background-color: #fff3e0 !important; color: #e65100 !important; border: 1px solid #ffb74d !important; height: 45px !important;}
-    .stDownloadButton>button {background-color: #e8f5e9 !important; color: #2e7d32 !important; border: 1px solid #a5d6a7 !important;}
-    .stForm {border: 2px solid #3366ff; padding: 15px; border-radius: 15px; background-color: #f8f9fa;}
-</style>
-""", unsafe_allow_html=True)
+        .leaflet-div-icon, .cbrn-text-container {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
 
-# ===============================
-# 2. Функція HTML-підпису (Дріб)
-# ===============================
-def get_fraction_label_html(value_str, date_str):
-    """Генерує HTML для синього дробу: Чисельник = Ціла потужність, Знаменник = Дата"""
-    return f"""
-    <div style="
-        display: inline-flex; 
-        flex-direction: column; 
-        align-items: center; 
-        justify-content: center; 
-        color: #0044cc; 
-        font-family: Arial, sans-serif; 
-        font-size: 11px; 
-        font-weight: bold; 
-        line-height: 1.1;
-        white-space: nowrap;
-        background: rgba(255, 255, 255, 0.85);
-        padding: 2px 4px;
-        border-radius: 4px;
-        box-shadow: 0px 1px 3px rgba(0,0,0,0.2);
-    ">
-        <span style="border-bottom: 1.5px solid #0044cc; padding-bottom: 1px; width: 100%; text-align: center;">
-            {value_str}
-        </span>
-        <span style="padding-top: 1px; width: 100%; text-align: center; font-size: 9.5px;">
-            {date_str}
-        </span>
+        /* --- НОВА НИЖНЯ ПАНЕЛЬ УПРАВЛІННЯ (ГОРІЗОНТАЛЬНА, 2 РЯДКИ) --- */
+        #panel {
+            background: #1a1a1a; 
+            color: #fff;
+            padding: 8px 12px;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.5);
+            border-top: 2px solid #FFD600;
+            z-index: 9999;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* Рядки всередині панелі */
+        .panel-row {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 6px;
+            align-items: center;
+            width: 100%;
+        }
+
+        #panel select, #panel input {
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #333;
+            color: #fff;
+            font-size: 12px;
+            height: 32px;
+            box-sizing: border-box;
+        }
+
+        /* Елементи першого рядка */
+        #symbolSelect {
+            flex-grow: 2;
+            min-width: 120px;
+        }
+        .btn-group-main {
+            display: flex;
+            gap: 4px;
+            flex-grow: 1;
+        }
+        .btn-group-main button {
+            height: 32px;
+            padding: 0 8px;
+            background: #444;
+            color: #fff;
+            border: 1px solid #555;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        .btn-group-main button:hover { background: #555; }
+
+        /* Елементи другого рядка (Метео та Експорт) */
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #252525;
+            padding: 0 6px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            height: 32px;
+            box-sizing: border-box;
+        }
+        .input-container span {
+            font-size: 10px;
+            color: #aaa;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .input-container input {
+            width: 50px !important;
+            border: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+            text-align: center;
+        }
+
+        #panel .btn-action {
+            background: #FFD600;
+            color: #000;
+            border: none;
+            font-size: 11px;
+            font-weight: bold;
+            height: 32px;
+            padding: 0 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        #panel .btn-action:hover { background: #e6c000; }
+
+        .btn-export {
+            height: 32px;
+            padding: 0 6px;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* --- ВІДЖЕТ ВІТРУ НАД ПАНЕЛЛЮ --- */
+        #windWidget {
+            position: absolute;
+            left: 10px;
+            bottom: 95px; /* Піднятий вище, щоб не перекривати нижню панель */
+            z-index: 9998;
+            background: rgba(26, 26, 26, 0.9);
+            color: #FFD600;
+            padding: 6px;
+            border-radius: 8px;
+            border: 1px solid #FFD600;
+            text-align: center;
+            width: 75px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .wind-arrow {
+            font-size: 22px;
+            margin: 0;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-block;
+        }
+        .wind-deg { font-size: 11px; font-weight: bold; }
+        
+        .wind-speed-table {
+            border-top: 1px dashed #FFD600;
+            margin-top: 4px;
+            padding-top: 4px;
+            font-size: 10px;
+            text-align: left;
+        }
+        .wind-speed-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .wind-speed-val { color: #fff; font-weight: bold; }
+
+        /* Зміщення дефолтних кнопок Leaflet у мобільній версії */
+        .leaflet-top.leaflet-left { top: 10px; }
+
+        @media print {
+            #panel { display: none !important; }
+            #windWidget { border: 1px solid #000; color: #000; background: white; bottom: 10px; }
+            .wind-speed-val { color: #000; }
+        }
+
+        /* Адаптація для зовсім маленьких екранів смартфонів */
+        @media (max-width: 480px) {
+            #panel { padding: 6px; }
+            .panel-row { gap: 4px; }
+            #panel select, #panel input, .btn-group-main button, #panel .btn-action, .btn-export { font-size: 10px; height: 30px; }
+            .input-container { height: 30px; padding: 0 3px; }
+            .input-container input { width: 35px !important; }
+            #windWidget { bottom: 90px; width: 70px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="capture_area">
+    <div id="map"></div>
+
+    <div id="windWidget">
+        <div class="wind-arrow" id="windArrow">↑</div>
+        <div class="wind-deg" id="windDeg">0°</div>
+        <div class="wind-speed-table">
+            <div class="wind-speed-row"><span>м/с:</span><span class="wind-speed-val" id="speedMs">0</span></div>
+            <div class="wind-speed-row"><span>км/г:</span><span class="wind-speed-val" id="speedKmh">0</span></div>
+        </div>
     </div>
-    """
 
-# ===============================
-# 3. Інтерфейс та Карта
-# ===============================
-st.title("☢️ RAD-MOBILE PRO")
+    <div id="panel">
+        <div class="panel-row">
+            <select id="symbolSelect">
+                <option value="">-- Знак РХБЗ --</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_radiation.svg">Точка рад. забруднення</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_chemical.svg">Точка хім. забруднення</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/detect_biological.svg">Точка біол. зараження</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/nuclear_blast.svg">Епіцентр яд. вибуху</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/radioactive_site.svg">Радіаційно небезпечний об’єкт</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/chemical_hazard_site.svg">Хімічно небезпечний об’єкт</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/biological_hazard_site.svg">Біологічно небезпечний об’єкт</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/cbrn_recon_area.svg">Район РХБ розвідки</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/decon_area_special.svg">Район спецобробки</option>
+                <option value="https://raw.githubusercontent.com/sergsh1125-dotcom/CBRN-panel/main/assets/svg/cbrn_post.svg">Пост спостереження РХБ</option>
+            </select>
 
-if st.button("📘 ІНСТРУКЦІЯ ЩОДО РОБОТИ"):
-    st.info("""
-    1. Натисніть на мапу (з'явиться червоний маркер вибору точки).
-    2. Введіть значення у полі **Потужність дози**.
-    3. Натисніть **Зберегти** (на місці маркера з'явиться синя крапка з дробом).
-    """)
+            <div class="btn-group-main">
+                <button onclick="finishSymbolDrawing()" style="background:#00796b;">Завершити знак</button>
+                <button onclick="enableText()">Текст</button>
+                <button style="background:#5c3a21;" onclick="enableEllipseMode()">Еліпс</button>
+                <button style="background:#8b0000;" onclick="clearAll()">Очистити</button>
+            </div>
+        </div>
 
-st.divider()
+        <div class="panel-row">
+            <div class="input-container">
+                <span>Вітер°:</span>
+                <input id="windInput" type="number" min="0" max="360" value="0">
+            </div>
 
-# 1. Отримуємо збережені координати попереднього кліку з session_state
-clicked_lat = st.session_state.get("last_lat", None)
-clicked_lon = st.session_state.get("last_lon", None)
+            <div class="input-container">
+                <span>м/с:</span>
+                <input id="windSpeedInput" type="number" min="0" max="50" step="0.1" value="0">
+            </div>
 
-# Визначення центру карти
-if clicked_lat is not None and clicked_lon is not None:
-    center = [clicked_lat, clicked_lon]
-elif not st.session_state.data.empty:
-    center = [st.session_state.data['lat'].iloc[-1], st.session_state.data['lon'].iloc[-1]]
-else:
-    center = [50.45, 30.52]
+            <button class="btn-action" onclick="applyWind()">Оновити Метео</button>
+            
+            <div style="flex-grow: 1;"></div> <button class="btn-export" style="background:#2e7d32;" onclick="exportPNG()">📸 PNG</button>
+            <button class="btn-export" style="background:#1565c0;" onclick="window.print()">🖨 PDF</button>
+        </div>
+    </div>
+</div>
 
-# 2. Створюємо карту
-m = folium.Map(location=center, zoom_start=13, prefer_canvas=True)
+<script>
+    let state = { objects: [], shapes: [] };
+    let selectedIcon = "";
+    let textMode = false;
+    let ellipseMode = false;
 
-# 3. Відмалювання вже збережених точок з бази (Синя крапка + Дріб)
-for _, r in st.session_state.data.iterrows():
-    v_s = f"{int(round(float(r['value'])))} {r['unit']}"
-    t_s = str(r['time'])
+    let map = L.map('map', { zoomControl: true }).setView([48.3, 31.1], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let drawnItems = new L.FeatureGroup().addTo(map);
+    let markersGroup = L.layerGroup().addTo(map);
+
+    let drawControl = new L.Control.Draw({
+        draw: { polygon: true, rectangle: true, circle: true, polyline: true, marker: false, circlemarker: false },
+        edit: { featureGroup: drawnItems }
+    }).addTo(map);
+
+    map.pm.addControls({
+        position: 'topleft',
+        drawMarker: false, drawCircleMarker: false, drawPolyline: true,
+        drawRectangle: false, drawPolygon: false, drawCircle: false,
+        editMode: false, dragMode: false, cutPolygon: false, removalMode: true
+    });
+
+    // Знайдіть у вашому коді налаштування Geoman і приведіть їх до такого вигляду:
+map.pm.setGlobalOptions({ 
+    measurements: { 
+        display: true,       // Головний перемикач відображення розмірів
+        totalLength: true,   // Для ліній
+        segmentLength: true, // Для багатокутників
+        radius: true,        // КРИТИЧНО ДЛЯ КОЛА: показує радіус
+        area: true           // Показує площу фігур (за бажанням)
+    } 
+});
+map.pm.setLang('uk'); // Переконайтеся, що мова українська (щоб писало "Радіус: ... м")
+
+    function saveState() { localStorage.setItem("cbrn_state", JSON.stringify(state)); }
     
-    folium.CircleMarker(
-        location=[r.lat, r.lon],
-        radius=3.5,
-        color="#0033cc",
-        fill=True,
-        fill_color="#0055ff",
-        fill_opacity=1.0,
-        weight=1,
-        popup=f"Потужність: {v_s}<br>Час: {t_s}"
-    ).add_to(m)
+    function loadState() {
+        let saved = localStorage.getItem("cbrn_state");
+        if (saved) {
+            try {
+                state = JSON.parse(saved);
+                if (!state.objects) state.objects = [];
+                if (!state.shapes) state.shapes = [];
+            } catch(e) {
+                state = { objects: [], shapes: [] };
+            }
+        }
+    }
+
+    function deactivateDrawTools() {
+        if (map._toolbars && map._toolbars.draw && map._toolbars.draw._activeMode) {
+            map._toolbars.draw._activeMode.handler.disable();
+        }
+        if (map.pm.globalDrawModeEnabled()) {
+            map.pm.disableDraw();
+        }
+    }
+
+    function restoreShapes() {
+        drawnItems.clearLayers();
+        if (!state || !state.shapes || state.shapes.length === 0) return;
+
+        let ellipses = state.shapes.filter(s => s && s.isEllipse && s.radiusX && s.radiusY);
+        let otherShapes = state.shapes.filter(s => s && (!s.isEllipse || !s.radiusX || !s.radiusY));
+
+        ellipses.sort((a, b) => a.id - b.id);
+
+        otherShapes.forEach((s) => {
+            let layer;
+            if (s.isCircle && s.circleRadius) {
+                let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
+                layer = L.circle(center, { radius: s.circleRadius, color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
+            } else if (s.geojson) {
+                layer = L.geoJSON(s.geojson, { style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 } });
+            }
+
+            if (layer) {
+                layer.addTo(drawnItems);
+                layer.on("click", function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    let globalIdx = state.shapes.findIndex(shape => shape.id === s.id);
+                    if (globalIdx !== -1) {
+                        state.shapes.splice(globalIdx, 1);
+                        saveState();
+                        restoreShapes();
+                    }
+                });
+            }
+        });
+
+        let groupedEllipses = {};
+        ellipses.forEach(s => {
+            let baseId = Math.floor(s.id / 2000) * 2000; 
+            if (!groupedEllipses[baseId]) groupedEllipses[baseId] = [];
+            groupedEllipses[baseId].push(s);
+        });
+
+        for (let baseId in groupedEllipses) {
+            let currentGroup = groupedEllipses[baseId];
+            currentGroup.sort((a, b) => b.radiusX - a.radiusX);
+
+            currentGroup.forEach((s, index) => {
+                if (!s.ellipseCenter) return;
+                let points = [];
+                let centerLat = s.ellipseCenter[0];
+                let centerLng = s.ellipseCenter[1];
+                
+                let windRad = (s.tilt || 0) * Math.PI / 180;
+                let angleRad = windRad + Math.PI; 
+
+                for (let i = 0; i < 64; i++) {
+                    let angle = (i / 64) * 2 * Math.PI;
+                    let x = s.radiusY * Math.cos(angle); 
+                    let y = s.radiusX * Math.sin(angle); 
+
+                    let rotatedDx = x * Math.cos(angleRad) + (y + s.radiusX) * Math.sin(angleRad);
+                    let rotatedDy = -x * Math.sin(angleRad) + (y + s.radiusX) * Math.cos(angleRad);
+
+                    let latOffset = rotatedDy / 111320;
+                    let lngOffset = rotatedDx / (111320 * Math.cos(centerLat * Math.PI / 180));
+
+                    points.push([centerLat + latOffset, centerLng + lngOffset]);
+                }
+
+                let zoneColor = "#ffcc00"; 
+                let zoneOpacity = 0.3;
+
+                if (currentGroup.length === 2) {
+                    zoneColor = (index === 0) ? "#ff9900" : "#cc0000"; 
+                    zoneOpacity = (index === 0) ? 0.35 : 0.55;
+                } else if (currentGroup.length >= 3) {
+                    if (index === 0) { zoneColor = "#ffcc00"; zoneOpacity = 0.25; } 
+                    else if (index === 1) { zoneColor = "#ff9900"; zoneOpacity = 0.45; } 
+                    else { zoneColor = "#cc0000"; zoneOpacity = 0.65; }
+                }
+
+                let polygonLayer = L.polygon(points, {
+                    color: zoneColor == "#cc0000" ? "#8b0000" : "black", 
+                    weight: 2, fillColor: zoneColor, fillOpacity: zoneOpacity
+                }).addTo(drawnItems);
+
+                polygonLayer.on("click", function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    if(confirm(`Видалити цю хмару забруднення AEGL?`)) {
+                        state.shapes = state.shapes.filter(shape => {
+                            if (!shape.isEllipse) return true;
+                            let shapeBaseId = Math.floor(shape.id / 2000) * 2000;
+                            return shapeBaseId !== parseInt(baseId);
+                        });
+                        saveState();
+                        restoreShapes();
+                    }
+                });
+            });
+        }
+    }
+
+    document.getElementById("symbolSelect").onchange = function(e) {
+        selectedIcon = e.target.value;
+        textMode = false; ellipseMode = false;
+        if (selectedIcon) deactivateDrawTools();
+    };
+
+    function enableText() { 
+        textMode = true; ellipseMode = false; selectedIcon = ""; 
+        document.getElementById("symbolSelect").value = ""; 
+        deactivateDrawTools(); 
+    }
     
-    folium.Marker(
-        [r.lat, r.lon],
-        icon=folium.DivIcon(
-            icon_anchor=(-6, 18),
-            html=get_fraction_label_html(v_s, t_s)
-        )
-    ).add_to(m)
+    function enableEllipseMode() { 
+        ellipseMode = true; textMode = false; selectedIcon = ""; 
+        document.getElementById("symbolSelect").value = ""; 
+        deactivateDrawTools(); 
+    }
 
-# 4. Якщо є зафіксований клік — ставимо ЧЕРВОНИЙ маркер ДО рендерингу карти
-if clicked_lat is not None and clicked_lon is not None:
-    folium.Marker(
-        [clicked_lat, clicked_lon],
-        popup="Обрана точка",
-        icon=folium.Icon(color="red", icon="info-sign")
-    ).add_to(m)
-
-# 5. Відображаємо карту (ВИПРАВЛЕНО: width=700 та use_container_width=True для чутливості до екрана)
-map_res = st_folium(m, width=700, height=380, use_container_width=True, key="map", returned_objects=["last_clicked"])
-
-# 6. Оновлюємо стан кліку при взаємодії з картою
-if map_res and map_res.get("last_clicked"):
-    new_lat = map_res["last_clicked"]["lat"]
-    new_lon = map_res["last_clicked"]["lng"]
+    function finishSymbolDrawing() {
+        selectedIcon = "";
+        textMode = false;
+        ellipseMode = false;
+        document.getElementById("symbolSelect").value = "";
+        deactivateDrawTools();
+    }
     
-    if st.session_state.get("last_lat") != new_lat or st.session_state.get("last_lon") != new_lon:
-        st.session_state["last_lat"] = new_lat
-        st.session_state["last_lon"] = new_lon
-        st.rerun()
+    function clearAll() {
+        if(confirm("Очистити всю обстановку на карті?")) {
+            state = { objects: [], shapes: [] };
+            localStorage.removeItem("cbrn_state");
+            drawnItems.clearLayers();
+            markersGroup.clearLayers();
+            location.reload();
+        }
+    }
 
-# Локальний час для форми
-auto_time = pd.Timestamp.now(tz="Europe/Kyiv").strftime("%d.%m.%Y %H:%M")
-curr_lat = clicked_lat if clicked_lat is not None else center[0]
-curr_lon = clicked_lon if clicked_lon is not None else center[1]
+    function render() {
+        markersGroup.clearLayers();
+        if (!state || !state.objects) return;
 
-# ===============================
-# 4. Форма внесення даних
-# ===============================
-with st.form("input_form"):
-    st.markdown(f"📍 **Обрано координати:** `{curr_lat:.5f}, {curr_lon:.5f}` | 🕒 `{auto_time}`")
-    
-    val = st.number_input("Потужність дози", format="%.0f", step=1, value=0)
-    unit = st.selectbox("Одиниця", ["мкЗв/год", "мЗв/год"])
-    
-    if st.form_submit_button("✅ ЗБЕРЕГТИ ВИМІРЮВАННЯ"):
-        new_point = pd.DataFrame([{"lat": curr_lat, "lon": curr_lon, "value": int(val), "unit": unit, "time": auto_time}])
-        st.session_state.data = pd.concat([st.session_state.data, new_point], ignore_index=True)
-        save_to_disk()
+        state.objects.forEach((obj, index) => {
+            let marker;
+            if (obj.type === "text") {
+                marker = L.marker([obj.lat, obj.lng], {
+                    icon: L.divIcon({ 
+                        className: "cbrn-text-container", 
+                        html: `<span style="display: inline-block; white-space: nowrap; font-size: 13px; font-weight: bold; color: #000; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff !important;">${obj.text}</span>`,
+                        iconSize: null, iconAnchor: [10, 10]  
+                    })
+                });
+            } else if (obj.type === "symbol" && obj.icon) {
+                marker = L.marker([obj.lat, obj.lng], {
+                    icon: L.icon({ iconUrl: obj.icon, iconSize: [28, 28], iconAnchor: [14, 14] })
+                });
+            }
+
+            if (marker) {
+                marker.addTo(markersGroup);
+                marker.on("click", function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    state.objects.splice(index, 1);
+                    saveState();
+                    render();
+                });
+            }
+        });
+    }
+
+    map.on("click", function(e) {
+        if (map.pm.globalDrawModeEnabled()) return;
+
+        if (textMode) {
+            let txt = prompt("Введіть оперативно-тактичний підпис:");
+            if (!txt) return;
+            state.objects.push({ type: "text", lat: e.latlng.lat, lng: e.latlng.lng, text: txt });
+            saveState();
+            render();
+            textMode = false;
+            return;
+        }
+
+        if (ellipseMode) {
+            let rX = prompt("Довжина зони AEGL (радіус X за вітром) в метрах:", "5000");
+            if (!rX) return;
+            let rY = prompt("Ширина зони AEGL (радіус Y) в метрах:", "2000");
+            if (!rY) return;
+            
+            let windInputVal = document.getElementById("windInput").value;
+            let angle = windInputVal !== "" ? parseFloat(windInputVal) : 0;
+            let uniqueId = Date.now();
+
+            state.shapes.push({ id: uniqueId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX), radiusY: parseFloat(rY), tilt: angle });
+            state.shapes.push({ id: uniqueId + 1, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.6, radiusY: parseFloat(rY) * 0.6, tilt: angle });
+            state.shapes.push({ id: uniqueId + 2, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.3, radiusY: parseFloat(rY) * 0.3, tilt: angle });
+
+            saveState();
+            restoreShapes();
+            ellipseMode = false;
+            return;
+        }
+
+        if (selectedIcon) {
+            state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
+            saveState();
+            render();
+        }
+    });
+
+    map.on(L.Draw.Event.CREATED, function (e) {
+        let layer = e.layer;
+        let type = e.layerType;
+        let shapeData = { id: Date.now(), geojson: layer.toGeoJSON(), isCircle: false, isEllipse: false };
+
+        if (typeof layer.getRadius === 'function' && type !== 'ellipse') {
+            shapeData.isCircle = true;
+            shapeData.circleRadius = layer.getRadius();
+            let latlng = layer.getLatLng();
+            shapeData.circleCenter = [latlng.lat, latlng.lng];
+        }
+
+        state.shapes.push(shapeData);
+        saveState();
+        restoreShapes();
+    });
+
+    function exportPNG() {
+        const area = document.getElementById("capture_area");
+        document.getElementById("panel").style.display = "none";
+        document.getElementById("windWidget").style.bottom = "10px"; // Тимчасово опускаємо віджет для красивого кадру
         
-        st.session_state["last_lat"] = None
-        st.session_state["last_lon"] = None
-        st.rerun()
+        html2canvas(area, { useCORS: true, allowTaint: true, scale: 2 }).then(function(canvas) {
+            const link = document.createElement("a");
+            link.download = `CBRN_Mobile_SITREP_${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            document.getElementById("panel").style.display = "flex";
+            document.getElementById("windWidget").style.bottom = "95px";
+        });
+    }
 
-# Видалення останньої точки
-if not st.session_state.data.empty:
-    st.markdown('<div class="undo-btn">', unsafe_allow_html=True)
-    if st.button("⬅️ ВИДАЛИТИ ОСТАННЮ ТОЧКУ"):
-        st.session_state.data = st.session_state.data.iloc[:-1]
-        save_to_disk()
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    function updateWindWidget(deg, speedMs) {
+        let visualAngle = (deg + 180) % 360;
+        document.getElementById("windArrow").style.transform = `rotate(${visualAngle}deg)`;
+        document.getElementById("windDeg").innerText = deg + "°";
+        let ms = parseFloat(speedMs) || 0;
+        let kmh = Math.round(ms * 3.6 * 10) / 10;
+        document.getElementById("speedMs").innerText = ms;
+        document.getElementById("speedKmh").innerText = kmh;
+    }
 
-# ===============================
-# 5. Експорт даних та HTML-звіту
-# ===============================
-st.divider()
-st.subheader("📊 Звіти")
+    function applyWind() {
+        let degVal = document.getElementById("windInput").value;
+        let speedVal = document.getElementById("windSpeedInput").value;
+        let deg = degVal !== "" ? parseInt(degVal) : 0;
+        deg = ((deg % 360) + 360) % 360;
+        let speed = speedVal !== "" ? parseFloat(speedVal) : 0;
+        if (speed < 0) speed = 0;
+        updateWindWidget(deg, speed);
+    }
 
-if not st.session_state.data.empty:
-    export_map = folium.Map(location=[st.session_state.data.lat.mean(), st.session_state.data.lon.mean()], zoom_start=12)
-    for _, r in st.session_state.data.iterrows():
-        v_s = f"{int(round(float(r['value'])))} {r['unit']}"
-        t_s = str(r['time'])
-        
-        folium.CircleMarker(
-            location=[r.lat, r.lon],
-            radius=3.5,
-            color="#0033cc",
-            fill=True,
-            fill_color="#0055ff",
-            fill_opacity=1.0,
-            weight=1
-        ).add_to(export_map)
-        
-        folium.Marker(
-            [r.lat, r.lon],
-            icon=folium.DivIcon(
-                icon_anchor=(-6, 18),
-                html=get_fraction_label_html(v_s, t_s)
-            )
-        ).add_to(export_map)
-    
-    # ВИПРАВЛЕНО: генерація HTML-коду карти через get_root().render()
-    html_data = export_map.get_root().render().encode('utf-8')
-    
-    st.download_button(
-        label="🌐 ЗБЕРЕГТИ КАРТУ У HTML (ЗВІТ)",
-        data=html_data,
-        file_name=f"Rad_Report_{pd.Timestamp.now().strftime('%d_%m_%Y')}.html",
-        mime="text/html",
-        use_container_width=True
-    )
-
-st.download_button(
-    label="💾 СКАЧАТИ БАЗУ CSV",
-    data=st.session_state.data.to_csv(index=False).encode('utf-8'),
-    file_name="radiation_db.csv",
-    mime="text/csv",
-    use_container_width=True
-)
-
-with st.expander("📥 Керування"):
-    up_db = st.file_uploader("Завантажити CSV", type="csv")
-    if up_db and st.button("🔄 Оновити"):
-        st.session_state.data = pd.read_csv(up_db)
-        save_to_disk()
-        st.rerun()
-    if st.button("🗑 ПОВНЕ ОЧИЩЕННЯ"):
-        st.session_state.data = pd.DataFrame(columns=["lat", "lon", "value", "unit", "time"])
-        if os.path.exists(DB_FILE): 
-            os.remove(DB_FILE)
-        st.rerun()
+    loadState();
+    restoreShapes();
+    render();
+    updateWindWidget(0, 0);
+</script>
+</body>
+</html>
