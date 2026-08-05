@@ -92,7 +92,6 @@ m = folium.Map(location=center, zoom_start=13, prefer_canvas=True)
 
 # 3. Відмалювання вже збережених точок з бази (Синя крапка + Дріб)
 for _, r in st.session_state.data.iterrows():
-    # Округлення до цілого значення (.0f)
     v_s = f"{int(round(float(r['value'])))} {r['unit']}"
     t_s = str(r['time'])
     
@@ -123,8 +122,8 @@ if clicked_lat is not None and clicked_lon is not None:
         icon=folium.Icon(color="red", icon="info-sign")
     ).add_to(m)
 
-# 5. Відображаємо карту та ловимо новий клік
-map_res = st_folium(m, width="100%", height=380, key="map", returned_objects=["last_clicked"])
+# 5. Відображаємо карту (ВИПРАВЛЕНО: width=700 та use_container_width=True для чутливості до екрана)
+map_res = st_folium(m, width=700, height=380, use_container_width=True, key="map", returned_objects=["last_clicked"])
 
 # 6. Оновлюємо стан кліку при взаємодії з картою
 if map_res and map_res.get("last_clicked"):
@@ -147,7 +146,6 @@ curr_lon = clicked_lon if clicked_lon is not None else center[1]
 with st.form("input_form"):
     st.markdown(f"📍 **Обрано координати:** `{curr_lat:.5f}, {curr_lon:.5f}` | 🕒 `{auto_time}`")
     
-    # Формат "%.0f" та step=1 для введення цілих чисел
     val = st.number_input("Потужність дози", format="%.0f", step=1, value=0)
     unit = st.selectbox("Одиниця", ["мкЗв/год", "мЗв/год"])
     
@@ -156,7 +154,6 @@ with st.form("input_form"):
         st.session_state.data = pd.concat([st.session_state.data, new_point], ignore_index=True)
         save_to_disk()
         
-        # Очищаємо тимчасовий маркер після збереження
         st.session_state["last_lat"] = None
         st.session_state["last_lon"] = None
         st.rerun()
@@ -200,9 +197,12 @@ if not st.session_state.data.empty:
             )
         ).add_to(export_map)
     
+    # ВИПРАВЛЕНО: генерація HTML-коду карти через get_root().render()
+    html_data = export_map.get_root().render().encode('utf-8')
+    
     st.download_button(
         label="🌐 ЗБЕРЕГТИ КАРТУ У HTML (ЗВІТ)",
-        data=export_map._repr_html_().encode('utf-8'),
+        data=html_data,
         file_name=f"Rad_Report_{pd.Timestamp.now().strftime('%d_%m_%Y')}.html",
         mime="text/html",
         use_container_width=True
