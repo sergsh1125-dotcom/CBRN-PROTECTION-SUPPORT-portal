@@ -478,10 +478,15 @@ map.pm.setLang('uk'); // Переконайтеся, що мова україн�
                     })
                 });
             } else if (obj.type === "symbol" && obj.icon) {
-                marker = L.marker([obj.lat, obj.lng], {
-                    icon: L.icon({ iconUrl: obj.icon, iconSize: [28, 28], iconAnchor: [14, 14] })
-                });
-            }
+    marker = L.marker([obj.lat, obj.lng], {
+        icon: L.divIcon({
+            className: "cbrn-text-container",
+            html: `<img src="${obj.icon}" style="height: 36px; width: auto; display: block; transform: translate(-50%, -50%);" />`,
+            iconSize: [0, 0],
+            iconAnchor: [0, 0]
+                  })
+              });
+          }
 
             if (marker) {
                 marker.addTo(markersGroup);
