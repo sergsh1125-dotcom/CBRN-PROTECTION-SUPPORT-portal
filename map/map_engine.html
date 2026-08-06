@@ -37,13 +37,21 @@
             background: #e5e3df;
         }
 
-        .leaflet-div-icon, .cbrn-text-container {
+        .leaflet-div-icon, .cbrn-text-container, .cbrn-symbol-container {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
         }
 
-        /* --- НОВА НИЖНЯ ПАНЕЛЬ УПРАВЛІННЯ (ГОРІЗОНТАЛЬНА, 2 РЯДКИ) --- */
+        .cbrn-symbol-container img {
+            height: 38px;
+            width: auto;
+            display: block;
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0px 0px 2px rgba(255, 255, 255, 0.8));
+        }
+
+        /* --- НИЖНЯ ПАНЕЛЬ УПРАВЛІННЯ --- */
         #panel {
             background: #1a1a1a; 
             color: #fff;
@@ -57,7 +65,6 @@
             gap: 6px;
         }
 
-        /* Рядки всередині панелі */
         .panel-row {
             display: flex;
             flex-wrap: nowrap;
@@ -77,7 +84,6 @@
             box-sizing: border-box;
         }
 
-        /* Елементи першого рядка */
         #symbolSelect {
             flex-grow: 2;
             min-width: 120px;
@@ -101,7 +107,6 @@
         }
         .btn-group-main button:hover { background: #555; }
 
-        /* Елементи другого рядка (Метео та Експорт) */
         .input-container {
             display: flex;
             align-items: center;
@@ -152,11 +157,11 @@
             font-weight: bold;
         }
 
-        /* --- ВІДЖЕТ ВІТРУ НАД ПАНЕЛЛЮ --- */
+        /* --- ВІДЖЕТ ВІТРУ --- */
         #windWidget {
             position: absolute;
             left: 10px;
-            bottom: 95px; /* Піднятий вище, щоб не перекривати нижню панель */
+            bottom: 95px;
             z-index: 9998;
             background: rgba(26, 26, 26, 0.9);
             color: #FFD600;
@@ -188,7 +193,6 @@
         }
         .wind-speed-val { color: #fff; font-weight: bold; }
 
-        /* Зміщення дефолтних кнопок Leaflet у мобільній версії */
         .leaflet-top.leaflet-left { top: 10px; }
 
         @media print {
@@ -197,7 +201,6 @@
             .wind-speed-val { color: #000; }
         }
 
-        /* Адаптація для зовсім маленьких екранів смартфонів */
         @media (max-width: 480px) {
             #panel { padding: 6px; }
             .panel-row { gap: 4px; }
@@ -225,18 +228,18 @@
     <div id="panel">
         <div class="panel-row">
             <select id="symbolSelect">
-    <option value="">-- Знак РХБЗ --</option>
-    <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/detect_radiation.svg">Точка рад. забруднення</option>
-    <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/detect_chemical.svg">Точка хім. забруднення</option>
-    <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/detect_biological.svg">Точка біол. зараження</option>
-    <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/nuclear_blast.svg">Епіцентр яд. вибуху</option>
-    <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/radioactive_site.svg">Радіаційно небезпечний об’єкт</option>
-    <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/chemical_hazard_site.svg">Хімічно небезпечний об’єкт</option>
-    <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/biological_hazard_site.svg">Біологічно небезпечний об’єкт</option>
-    <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/cbrn_recon_area.svg">Район РХБ розвідки</option>
-    <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/decon_area_special.svg">Район спецобробки</option>
-    <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/cbrn_post.svg">Пост спостереження РХБ</option>
-</select>
+                <option value="">-- Знак РХБЗ --</option>
+                <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/detect_radiation.svg">Точка рад. забруднення</option>
+                <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/detect_chemical.svg">Точка хім. забруднення</option>
+                <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/detect_biological.svg">Точка біол. зараження</option>
+                <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/nuclear_blast.svg">Епіцентр яд. вибуху</option>
+                <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/radioactive_site.svg">Радіаційно небезпечний об’єкт</option>
+                <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/chemical_hazard_site.svg">Хімічно небезпечний об’єкт</option>
+                <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/biological_hazard_site.svg">Біологічно небезпечний об’єкт</option>
+                <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/cbrn_recon_area.svg">Район РХБ розвідки</option>
+                <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/decon_area_special.svg">Район спецобробки</option>
+                <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-panel@main/assets/svg/cbrn_post.svg">Пост спостереження РХБ</option>
+            </select>
 
             <div class="btn-group-main">
                 <button onclick="finishSymbolDrawing()" style="background:#00796b;">Завершити знак</button>
@@ -259,7 +262,8 @@
 
             <button class="btn-action" onclick="applyWind()">Оновити Метео</button>
             
-            <div style="flex-grow: 1;"></div> <button class="btn-export" style="background:#2e7d32;" onclick="exportPNG()">📸 PNG</button>
+            <div style="flex-grow: 1;"></div> 
+            <button class="btn-export" style="background:#2e7d32;" onclick="exportPNG()">📸 PNG</button>
             <button class="btn-export" style="background:#1565c0;" onclick="window.print()">🖨 PDF</button>
         </div>
     </div>
@@ -292,17 +296,16 @@
         editMode: false, dragMode: false, cutPolygon: false, removalMode: true
     });
 
-    // Знайдіть у вашому коді налаштування Geoman і приведіть їх до такого вигляду:
-map.pm.setGlobalOptions({ 
-    measurements: { 
-        display: true,       // Головний перемикач відображення розмірів
-        totalLength: true,   // Для ліній
-        segmentLength: true, // Для багатокутників
-        radius: true,        // КРИТИЧНО ДЛЯ КОЛА: показує радіус
-        area: true           // Показує площу фігур (за бажанням)
-    } 
-});
-map.pm.setLang('uk'); // Переконайтеся, що мова українська (щоб писало "Радіус: ... м")
+    map.pm.setGlobalOptions({ 
+        measurements: { 
+            display: true,       
+            totalLength: true,   
+            segmentLength: true, 
+            radius: true,        
+            area: true           
+        } 
+    });
+    map.pm.setLang('uk');
 
     function saveState() { localStorage.setItem("cbrn_state", JSON.stringify(state)); }
     
@@ -474,19 +477,20 @@ map.pm.setLang('uk'); // Переконайтеся, що мова україн�
                     icon: L.divIcon({ 
                         className: "cbrn-text-container", 
                         html: `<span style="display: inline-block; white-space: nowrap; font-size: 13px; font-weight: bold; color: #000; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff !important;">${obj.text}</span>`,
-                        iconSize: null, iconAnchor: [10, 10]  
+                        iconSize: null, 
+                        iconAnchor: [10, 10]  
                     })
                 });
             } else if (obj.type === "symbol" && obj.icon) {
-    marker = L.marker([obj.lat, obj.lng], {
-        icon: L.divIcon({
-            className: "cbrn-text-container",
-            html: `<img src="${obj.icon}" style="height: 36px; width: auto; display: block; transform: translate(-50%, -50%);" />`,
-            iconSize: [0, 0],
-            iconAnchor: [0, 0]
-                  })
-              });
-          }
+                marker = L.marker([obj.lat, obj.lng], {
+                    icon: L.divIcon({
+                        className: "cbrn-symbol-container",
+                        html: `<img src="${obj.icon}" crossorigin="anonymous" style="height: 38px; width: auto; display: block; transform: translate(-50%, -50%);" />`,
+                        iconSize: [0, 0],
+                        iconAnchor: [0, 0]
+                    })
+                });
+            }
 
             if (marker) {
                 marker.addTo(markersGroup);
@@ -560,9 +564,13 @@ map.pm.setLang('uk'); // Переконайтеся, що мова україн�
     function exportPNG() {
         const area = document.getElementById("capture_area");
         document.getElementById("panel").style.display = "none";
-        document.getElementById("windWidget").style.bottom = "10px"; // Тимчасово опускаємо віджет для красивого кадру
+        document.getElementById("windWidget").style.bottom = "10px";
         
-        html2canvas(area, { useCORS: true, allowTaint: true, scale: 2 }).then(function(canvas) {
+        html2canvas(area, { 
+            useCORS: true, 
+            allowTaint: true, 
+            scale: 2 
+        }).then(function(canvas) {
             const link = document.createElement("a");
             link.download = `CBRN_Mobile_SITREP_${Date.now()}.png`;
             link.href = canvas.toDataURL("image/png");
