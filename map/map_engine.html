@@ -37,18 +37,26 @@
             background: #e5e3df;
         }
 
+        /* --- КАСТОМІЗАЦІЯ ЗНАКІВ РХБЗ --- */
         .leaflet-div-icon, .cbrn-text-container, .cbrn-symbol-container {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
         }
 
-        .cbrn-symbol-container img {
+        .cbrn-symbol-wrapper {
+            width: 38px;
             height: 38px;
-            width: auto;
-            display: block;
-            transform: translate(-50%, -50%);
-            filter: drop-shadow(0px 0px 2px rgba(255, 255, 255, 0.8));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cbrn-symbol-wrapper img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0px 0px 2px rgba(255, 255, 255, 0.9));
         }
 
         /* --- НИЖНЯ ПАНЕЛЬ УПРАВЛІННЯ --- */
@@ -485,9 +493,9 @@
                 marker = L.marker([obj.lat, obj.lng], {
                     icon: L.divIcon({
                         className: "cbrn-symbol-container",
-                        html: `<img src="${obj.icon}" crossorigin="anonymous" style="height: 38px; width: auto; display: block; transform: translate(-50%, -50%);" />`,
-                        iconSize: [0, 0],
-                        iconAnchor: [0, 0]
+                        html: `<div class="cbrn-symbol-wrapper"><img src="${obj.icon}" /></div>`,
+                        iconSize: [38, 38],
+                        iconAnchor: [19, 19]
                     })
                 });
             }
