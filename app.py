@@ -110,7 +110,7 @@ with col_left:
 
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
     st.link_button("2.1. Аварійні картки НХР", "https://sergsh1125-dotcom.github.io/emergency-cards/")
-    st.link_button("2.2. Токсодози (AEGL) бойових ОР та НХР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
+    st.link_button("2.2. Рівні впливу (AEGL) БОР та НХР", "https://sergsh1125-dotcom.github.io/toxicdoze/")
 
 # -------- ЦЕНТР (КАРТА) --------
 with col_center:
