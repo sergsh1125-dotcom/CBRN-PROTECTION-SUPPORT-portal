@@ -383,26 +383,26 @@
 
     // 2) АВТОМАТИЧНИЙ РЕЖИМ МАРШРУТУ (Підтримка кількох точок через ;)
     async function geocodeInput(query) {
-        query = query.trim();
-        if (!query) return null;
+    query = query.trim();
+    if (!query) return null;
 
-        let coordMatch = query.match(/^([-+]?\d+\.?\d*)[,\s]+([-+]?\d+\.?\d*)$/);
-        if (coordMatch) {
-            return [parseFloat(coordMatch[1]), parseFloat(coordMatch[2])];
-        }
-
-        try {
-            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
-            let data = await response.json();
-            if (data && data.length > 0) {
-                return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-            }
-        } catch (e) {
-            console.error("Помилка геокодування:", e);
-        }
-        return null;
+    let coordMatch = query.match(/^([-+]?\d+\.?\d*)[,\s]+([-+]?\d+\.?\d*)$/);
+    if (coordMatch) {
+        return [parseFloat(coordMatch[1]), parseFloat(coordMatch[2])];
     }
 
+    try {
+        // Додано параметр &countrycodes=ua для пошуку виключно в межах України
+        let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ua&limit=1`);
+        let data = await response.json();
+        if (data && data.length > 0) {
+            return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+        }
+    } catch (e) {
+        console.error("Помилка геокодування:", e);
+    }
+    return null;
+}
     async function buildAutoRoute() {
         let rawInput = document.getElementById("routePoints").value;
         if (!rawInput.trim()) {
