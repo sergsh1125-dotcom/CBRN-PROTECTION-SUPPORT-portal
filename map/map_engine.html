@@ -238,7 +238,7 @@
     </div>
 
     <div id="panel">
-        <!-- РЯДОК 1: Автомаршрут з проміжними точками через ; -->
+        <!-- РЯДОК 1: Автомаршрут з проміжними точками через ; (в межах України) -->
         <div class="panel-row" style="border-bottom: 1px solid #333; padding-bottom: 4px;">
             <div class="input-container" style="flex-grow: 1;">
                 <span>Маршрут:</span>
@@ -381,28 +381,28 @@
         });
     }
 
-    // 2) АВТОМАТИЧНИЙ РЕЖИМ МАРШРУТУ (Підтримка кількох точок через ;)
+    // 2) АВТОМАТИЧНИЙ РЕЖИМ МАРШРУТУ (тільки в межах України)
     async function geocodeInput(query) {
-    query = query.trim();
-    if (!query) return null;
+        query = query.trim();
+        if (!query) return null;
 
-    let coordMatch = query.match(/^([-+]?\d+\.?\d*)[,\s]+([-+]?\d+\.?\d*)$/);
-    if (coordMatch) {
-        return [parseFloat(coordMatch[1]), parseFloat(coordMatch[2])];
-    }
-
-    try {
-        // Додано параметр &countrycodes=ua для пошуку виключно в межах України
-        let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ua&limit=1`);
-        let data = await response.json();
-        if (data && data.length > 0) {
-            return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+        let coordMatch = query.match(/^([-+]?\d+\.?\d*)[,\s]+([-+]?\d+\.?\d*)$/);
+        if (coordMatch) {
+            return [parseFloat(coordMatch[1]), parseFloat(coordMatch[2])];
         }
-    } catch (e) {
-        console.error("Помилка геокодування:", e);
+
+        try {
+            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ua&limit=1`);
+            let data = await response.json();
+            if (data && data.length > 0) {
+                return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+            }
+        } catch (e) {
+            console.error("Помилка геокодування:", e);
+        }
+        return null;
     }
-    return null;
-}
+
     async function buildAutoRoute() {
         let rawInput = document.getElementById("routePoints").value;
         if (!rawInput.trim()) {
@@ -422,7 +422,7 @@
         for (let part of parts) {
             let coords = await geocodeInput(part);
             if (!coords) {
-                alert(`Не вдалося знайти точку: "${part}"`);
+                alert(`Не вдалося знайти точку: "${part}" в Україні`);
                 return;
             }
             coordinatesList.push(`${coords[1]},${coords[0]}`);
@@ -707,7 +707,7 @@
             state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
             saveState();
             render();
-            deactivateDrawTools();
+            // Змінено: вибрана іконка НЕ скидається автоматично, дозволяючи ставити знак багато разів поспіль
         }
     });
 
