@@ -297,7 +297,7 @@
     let drawnItems = new L.FeatureGroup().addTo(map);
     let markersGroup = L.layerGroup().addTo(map);
 
-    // --- НАЛАШТУВАННЯ GEOMAN (ТІЛЬКИ КОЛО, БАГАТОКУТНИК, ЛІНІЯ ТА КОРЕГУВАННЯ) ---
+    // --- НАЛАШТУВАННЯ GEOMAN ---
     map.pm.addControls({
         position: 'topleft',
         drawMarker: false,
@@ -338,14 +338,19 @@
         }
     }
 
-    // Повне вимкнення всіх активних режимів внесення знаків
-    function deactivateDrawTools() {
+    // Вимкнення інструментів Geoman без зачіпання вибраного знаку
+    function stopGeomanDraw() {
         if (map.pm.globalDrawModeEnabled()) {
             map.pm.disableDraw();
         }
         if (map.pm.globalEditModeEnabled()) {
             map.pm.disableGlobalEditMode();
         }
+    }
+
+    // Повне вимкнення всіх активних режимів внесення знаків (на кнопку "Завершити знак")
+    function deactivateDrawTools() {
+        stopGeomanDraw();
         textMode = false;
         ellipseMode = false;
         selectedIcon = "";
@@ -364,7 +369,6 @@
             shapeData.circleCenter = [latlng.lat, latlng.lng];
         }
 
-        // Видаляємо тимчасовий шар Geoman, оскільки restoreShapes відмалює його зі стану
         map.removeLayer(layer);
 
         state.shapes.push(shapeData);
@@ -473,22 +477,30 @@
         }
     }
 
+    // --- ОБРОБКА ВИБОРУ ЗНАКА СИМВОЛУ ---
     document.getElementById("symbolSelect").onchange = function(e) {
         selectedIcon = e.target.value;
-        textMode = false; ellipseMode = false;
-        if (selectedIcon) deactivateDrawTools();
+        textMode = false; 
+        ellipseMode = false;
+        
+        // Вимикаємо малювання фігур Geoman, щоб клік ставив маркер
+        if (selectedIcon) stopGeomanDraw();
     };
 
     function enableText() { 
-        textMode = true; ellipseMode = false; selectedIcon = ""; 
+        textMode = true; 
+        ellipseMode = false; 
+        selectedIcon = ""; 
         document.getElementById("symbolSelect").value = ""; 
-        deactivateDrawTools(); 
+        stopGeomanDraw(); 
     }
     
     function enableEllipseMode() { 
-        ellipseMode = true; textMode = false; selectedIcon = ""; 
+        ellipseMode = true; 
+        textMode = false; 
+        selectedIcon = ""; 
         document.getElementById("symbolSelect").value = ""; 
-        deactivateDrawTools(); 
+        stopGeomanDraw(); 
     }
     
     function clearAll() {
