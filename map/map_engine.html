@@ -238,17 +238,13 @@
     </div>
 
     <div id="panel">
-        <!-- РЯДОК 1: Автомаршрут -->
+        <!-- РЯДОК 1: Автомаршрут з проміжними точками через ; (в межах України) -->
         <div class="panel-row" style="border-bottom: 1px solid #333; padding-bottom: 4px;">
             <div class="input-container" style="flex-grow: 1;">
-                <span>Старт:</span>
-                <input id="routeStart" type="text" placeholder="Населений пункт або 50.45, 30.52" style="width: 100% !important; text-align: left;">
+                <span>Маршрут:</span>
+                <input id="routePoints" type="text" placeholder="Київ; Фастів; Житомир або 50.45,30.52; 50.25,28.65" style="width: 100% !important; text-align: left;">
             </div>
-            <div class="input-container" style="flex-grow: 1;">
-                <span>Фініш:</span>
-                <input id="routeEnd" type="text" placeholder="Населений пункт або 50.45, 30.52" style="width: 100% !important; text-align: left;">
-            </div>
-            <button class="btn-action" style="background:#2563eb; color:#fff;" onclick="buildAutoRoute()">Маршрут (автоматично)</button>
+            <button class="btn-action" style="background:#2563eb; color:#fff;" onclick="buildAutoRoute()">🚗 Автомаршрут</button>
         </div>
 
         <!-- РЯДОК 2: Основні знаки та Ручний режим -->
@@ -268,7 +264,7 @@
             </select>
 
             <div class="btn-group-main">
-                <button style="background:#d97706;" onclick="enableReconRoute()">Маршрут (клік)</button>
+                <button style="background:#d97706;" onclick="enableReconRoute()">✍️ Маршрут (ручний)</button>
                 <button onclick="enableText()">Текст</button>
                 <button style="background:#5c3a21;" onclick="enableEllipseMode()">Еліпс</button>
                 <button class="btn-finish-mode" onclick="deactivateDrawTools()">Завершити знак</button>
@@ -385,20 +381,18 @@
         });
     }
 
-    // 2) АВТОМАТИЧНИЙ РЕЖИМ МАРШРУТУ (Геокодування + OSRM)
+    // 2) АВТОМАТИЧНИЙ РЕЖИМ МАРШРУТУ (тільки в межах України)
     async function geocodeInput(query) {
         query = query.trim();
         if (!query) return null;
 
-        // Перевіряємо чи це координати (напр. "50.45, 30.52")
         let coordMatch = query.match(/^([-+]?\d+\.?\d*)[,\s]+([-+]?\d+\.?\d*)$/);
         if (coordMatch) {
             return [parseFloat(coordMatch[1]), parseFloat(coordMatch[2])];
         }
 
-        // Якщо це текстова назва населеного пункту -> викликаємо Nominatim API
         try {
-            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ua&limit=1`);
             let data = await response.json();
             if (data && data.length > 0) {
                 return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
@@ -410,23 +404,34 @@
     }
 
     async function buildAutoRoute() {
-        let startVal = document.getElementById("routeStart").value;
-        let endVal = document.getElementById("routeEnd").value;
-
-        if (!startVal || !endVal) {
-            alert("Будь ласка, введіть точки 'Старт' та 'Фініш' (назву населеного пункту або координати)!");
+        let rawInput = document.getElementById("routePoints").value;
+        if (!rawInput.trim()) {
+            alert("Введіть точки маршруту через крапку з комою (;), наприклад: Київ; Фастів; Житомир");
             return;
         }
 
-        let startCoords = await geocodeInput(startVal);
-        let endCoords = await geocodeInput(endVal);
+        let parts = rawInput.split(';').map(p => p.trim()).filter(p => p.length > 0);
+        if (parts.length < 2) {
+            alert("Потрібно ввести мінімум 2 точки, розділені знаком ';'");
+            return;
+        }
 
-        if (!startCoords) { alert(`Не вдалося знайти точку Старту: "${startVal}"`); return; }
-        if (!endCoords) { alert(`Не вдалося знайти точку Фінішу: "${endVal}"`); return; }
+        let coordinatesList = [];
+        let validNames = [];
 
-        // Запит до OSRM Маршрутизатора
+        for (let part of parts) {
+            let coords = await geocodeInput(part);
+            if (!coords) {
+                alert(`Не вдалося знайти точку: "${part}" в Україні`);
+                return;
+            }
+            coordinatesList.push(`${coords[1]},${coords[0]}`);
+            validNames.push(part);
+        }
+
         try {
-            let osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startCoords[1]},${startCoords[0]};${endCoords[1]},${endCoords[0]}?overview=full&geometries=geojson`;
+            let coordsString = coordinatesList.join(';');
+            let osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`;
             let response = await fetch(osrmUrl);
             let data = await response.json();
 
@@ -441,7 +446,7 @@
                     properties: {}
                 };
 
-                let routeName = `${startVal} ➔ ${endVal} (${distKm} км, ~${durationMin} хв)`;
+                let routeName = `${validNames.join(' ➔ ')} (${distKm} км, ~${durationMin} хв)`;
 
                 let shapeData = {
                     id: Date.now(),
@@ -454,12 +459,11 @@
                 saveState();
                 restoreShapes();
 
-                // Центруємо карту на створеному маршруті
                 let tempLayer = L.geoJSON(geojson);
                 map.fitBounds(tempLayer.getBounds(), { padding: [30, 30] });
 
             } else {
-                alert("Не вдалося прокласти автомобільний маршрут між цими точками!");
+                alert("Не вдалося прокласти автомобільний маршрут через зазначені точки!");
             }
         } catch (e) {
             alert("Помилка з'єднання з сервісом маршрутизації OSRM!");
@@ -475,7 +479,6 @@
         return total >= 1000 ? (total / 1000).toFixed(2) + " км" : Math.round(total) + " м";
     }
 
-    // Збереження стандартних малюнків та ручних маршрутів
     map.on('pm:create', function(e) {
         let layer = e.layer;
         let shapeData = { id: Date.now(), geojson: layer.toGeoJSON(), isCircle: false, isEllipse: false, isRoute: false };
@@ -704,7 +707,7 @@
             state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
             saveState();
             render();
-            deactivateDrawTools();
+            // Змінено: вибрана іконка НЕ скидається автоматично, дозволяючи ставити знак багато разів поспіль
         }
     });
 
