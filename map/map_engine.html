@@ -9,220 +9,36 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        header {
-            background-color: #1e293b;
-            color: #ffffff;
-            padding: 12px 16px;
-            text-align: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        #main-container {
-            display: flex;
-            flex: 1;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        @media (min-width: 768px) {
-            #main-container {
-                flex-direction: row;
-            }
-        }
-
-        #map {
-            flex: 1;
-            width: 100%;
-            height: 100%;
-            min-height: 350px;
-            z-index: 1;
-        }
-
-        #sidebar {
-            width: 100%;
-            max-width: 100%;
-            background-color: #ffffff;
-            padding: 16px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            overflow-y: auto;
-            z-index: 2;
-        }
-
-        @media (min-width: 768px) {
-            #sidebar {
-                width: 380px;
-                box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-            }
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #0f172a;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 6px;
-        }
-
-        .form-group {
-            margin-bottom: 14px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin-bottom: 6px;
-            color: #475569;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        select {
-            width: 100%;
-            padding: 10px 12px;
-            font-size: 1rem;
-            background-color: #e2e8f0;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        select:focus {
-            border-color: #2563eb;
-            background-color: #ffffff;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 14px;
-        }
-
-        .btn {
-            flex: 1;
-            min-width: 120px;
-            padding: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            text-align: center;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn-primary {
-            background-color: #2563eb;
-            color: #ffffff;
-        }
-
-        .btn-primary:hover {
-            background-color: #1d4ed8;
-        }
-
-        .btn-secondary {
-            background-color: #5c3a21;
-            color: #ffffff;
-        }
-
-        .btn-secondary:hover {
-            background-color: #442a18;
-        }
-
-        .btn-active {
-            background-color: #d32f2f !important;
-            color: #ffffff !important;
-        }
-
-        .btn-outline {
-            background-color: #e2e8f0;
-            color: #1e293b;
-            border: 1px solid #cbd5e1;
-        }
-
-        .btn-outline:hover {
-            background-color: #cbd5e1;
-        }
-
-        .info-panel {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 10px 12px;
-            font-size: 0.9rem;
-            margin-top: 10px;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: sans-serif; background-color: #f4f4f9; color: #333; display: flex; flex-direction: column; height: 100vh; }
+        header { background-color: #1e293b; color: #ffffff; padding: 12px; text-align: center; font-size: 1.2rem; font-weight: bold; }
+        #main-container { display: flex; flex: 1; flex-direction: column; overflow: hidden; }
+        @media (min-width: 768px) { #main-container { flex-direction: row; } }
+        #map { flex: 1; width: 100%; height: 100%; min-height: 350px; z-index: 1; }
+        #sidebar { width: 100%; background-color: #ffffff; padding: 16px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); overflow-y: auto; z-index: 2; }
+        @media (min-width: 768px) { #sidebar { width: 360px; } }
+        .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; color: #475569; }
+        input[type="text"], select { width: 100%; padding: 10px 12px; font-size: 1rem; background-color: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+        .btn { flex: 1; min-width: 120px; padding: 12px; font-size: 1rem; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; text-align: center; }
+        .btn-primary { background-color: #2563eb; color: #ffffff; }
+        .btn-secondary { background-color: #5c3a21; color: #ffffff; }
+        .btn-active { background-color: #d32f2f !important; color: #ffffff !important; }
+        .btn-outline { background-color: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; }
     </style>
 </head>
 <body>
 
-    <header>
-        Панель підтримки реагування на ХБРЯ інциденти
-    </header>
+    <header>Панель підтримки реагування на ХБРЯ інциденти</header>
 
     <div id="main-container">
         <div id="map"></div>
 
         <div id="sidebar">
-            <div class="section-title">Розрахунок дози</div>
-            
-            <div class="form-group">
-                <label for="doseRate">потужність дози</label>
-                <input type="number" id="doseRate" step="0.01" value="0" placeholder="0.00">
-            </div>
-
-            <div class="form-group">
-                <label for="exposureTime">Час перебування (годин)</label>
-                <input type="number" id="exposureTime" step="0.1" value="0" placeholder="0">
-            </div>
-
-            <div class="form-group">
-                <label for="protectionCoeff">Коефіцієнт захисту Kз</label>
-                <select id="protectionCoeff">
-                    <option value="1">1 (Без захисту / Відкрита місцевість)</option>
-                    <option value="2">2 (Дерев'яний будинок)</option>
-                    <option value="10">10 (Цегляний будинок)</option>
-                    <option value="50">50 (Сховище / Підвал)</option>
-                    <option value="100">100 (Важке укриття)</option>
-                </select>
-            </div>
-
-            <button class="btn btn-primary" style="width: 100%; margin-bottom: 16px;" onclick="calculateDose()">Розрахувати дозу</button>
-
-            <div class="info-panel" id="doseResult">
-                Очікувана доза: 0.00 (мЗв)
-            </div>
-
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
-
-            <!-- БЛОК НАНЕСЕННЯ ЗНАКІВ ОБСТАНОВКИ -->
+            <!-- БЛОК 1: НАНЕСЕННЯ ЗНАКІВ -->
             <div class="section-title">Нанесення знаків обстановки</div>
-            
             <div class="form-group">
                 <label for="signType">Оберіть тип знака</label>
                 <select id="signType">
@@ -232,17 +48,16 @@
                     <option value="post">📍 Пост спостереження</option>
                 </select>
             </div>
-
             <button class="btn btn-secondary" id="btnToggleSignMode" style="width: 100%; margin-bottom: 16px;" onclick="toggleSignPlacement()">
                 ✏️ Увімкнути нанесення знаків
             </button>
 
             <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
 
+            <!-- БЛОК 2: АВТОМАРШРУТ -->
             <div class="section-title">Автомаршрут (Наземна розвідка)</div>
-            
             <div class="form-group">
-                <label for="routePoints">Точки маршруту (через крапку з комою `;`)</label>
+                <label for="routePoints">Точки маршруту (через `;`)</label>
                 <input type="text" id="routePoints" value="0" placeholder="Наприклад: Київ; 50.3950,30.3830; Житомир">
             </div>
 
@@ -251,7 +66,7 @@
                 <button class="btn btn-primary" onclick="buildAutoRoute()">🚗 Автомаршрут</button>
             </div>
 
-            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="downloadMapHTML()">Завантажити карту в HTML</button>
+            <button class="btn btn-outline" style="width: 100%; margin-top: 20px;" onclick="downloadMapHTML()">Завантажити карту в HTML</button>
         </div>
     </div>
 
@@ -259,44 +74,25 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Ініціалізація карти
         const map = L.map('map').setView([50.4501, 30.5234], 10);
 
-        // Шари карти (Схема, Супутник, Рельєф)
-        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri' });
+        const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '© OpenTopoMap' });
 
-        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles © Esri'
-        });
+        L.control.layers({ "Схема": streetLayer, "Супутник": satelliteLayer, "Рельєф": terrainLayer }).addTo(map);
 
-        const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-            attribution: 'Map data: © OpenStreetMap, SRTM | Map style: © OpenTopoMap'
-        });
-
-        const baseMaps = {
-            "Схема": streetLayer,
-            "Супутник": satelliteLayer,
-            "Рельєф": terrainLayer
-        };
-
-        L.control.layers(baseMaps).addTo(map);
-
-        // Змінні стану
         let isSelectingRoutePoint = false;
         let isPlacingSigns = false;
 
         let routeLayerGroup = L.layerGroup().addTo(map);
         let signsLayerGroup = L.layerGroup().addTo(map);
 
-        // 1. РЕЖИМ: Вибір точок автомаршруту
+        // Перемикання режимів
         function togglePointSelection() {
-            if (isPlacingSigns) toggleSignPlacement(); // Вимикаємо нанесення знаків, якщо ввімкнено
-
+            if (isPlacingSigns) toggleSignPlacement();
             isSelectingRoutePoint = !isSelectingRoutePoint;
             const btn = document.getElementById("btnSelectRoutePoint");
-            
             if (isSelectingRoutePoint) {
                 btn.classList.add("btn-active");
                 btn.innerText = "🎯 Клікніть на карті...";
@@ -308,16 +104,13 @@
             }
         }
 
-        // 2. РЕЖИМ: Нанесення знаків з випадаючого списку
         function toggleSignPlacement() {
-            if (isSelectingRoutePoint) togglePointSelection(); // Вимикаємо вибір маршруту, якщо ввімкнено
-
+            if (isSelectingRoutePoint) togglePointSelection();
             isPlacingSigns = !isPlacingSigns;
             const btn = document.getElementById("btnToggleSignMode");
-
             if (isPlacingSigns) {
                 btn.classList.add("btn-active");
-                btn.innerText = "❌ Вимкнути режим нанесення";
+                btn.innerText = "❌ Вимкнути нанесення";
                 map.getContainer().style.cursor = "pointer";
             } else {
                 btn.classList.remove("btn-active");
@@ -326,41 +119,23 @@
             }
         }
 
-        // ОБРОБНИК КЛІКІВ ПО КАРТІ
+        // Обробник кліку по карті
         map.on("click", function(e) {
             const lat = e.latlng.lat.toFixed(4);
             const lng = e.latlng.lng.toFixed(4);
 
-            // Режим додавання точки в автомаршрут
             if (isSelectingRoutePoint) {
                 const coordString = `${lat},${lng}`;
                 const routeInput = document.getElementById("routePoints");
-                
                 if (routeInput) {
-                    const currentValue = routeInput.value.trim();
-                    if (currentValue === "0" || currentValue === "") {
-                        routeInput.value = coordString;
-                    } else {
-                        routeInput.value = currentValue + "; " + coordString;
-                    }
+                    const val = routeInput.value.trim();
+                    routeInput.value = (val === "0" || val === "") ? coordString : val + "; " + coordString;
                 }
-                
-                L.circleMarker(e.latlng, {
-                    color: '#2563eb',
-                    fillColor: '#3b82f6',
-                    fillOpacity: 0.8,
-                    radius: 6
-                }).addTo(routeLayerGroup).bindPopup(`Точка маршруту: ${coordString}`).openPopup();
-
+                L.circleMarker(e.latlng, { color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.8, radius: 6 }).addTo(routeLayerGroup);
                 togglePointSelection();
-            }
-
-            // Режим нанесення знаків обстановки
-            else if (isPlacingSigns) {
+            } else if (isPlacingSigns) {
                 const signType = document.getElementById("signType").value;
-                let iconHtml = "📍";
-                let title = "Знак";
-
+                let iconHtml = "📍", title = "Знак";
                 if (signType === "rad") { iconHtml = "☢️"; title = "Радіаційне забруднення"; }
                 else if (signType === "chem") { iconHtml = "☣️"; title = "Хімічне забруднення"; }
                 else if (signType === "bio") { iconHtml = "🦠"; title = "Біологічне забруднення"; }
@@ -368,107 +143,54 @@
 
                 const customIcon = L.divIcon({
                     html: `<div style="font-size: 24px; text-shadow: 0 0 3px #fff;">${iconHtml}</div>`,
-                    className: 'custom-sign-icon',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15]
+                    className: 'custom-sign-icon', iconSize: [30, 30], iconAnchor: [15, 15]
                 });
 
-                L.marker(e.latlng, { icon: customIcon })
-                    .addTo(signsLayerGroup)
-                    .bindPopup(`<b>${title}</b><br>Координати: ${lat}, ${lng}`)
-                    .openPopup();
+                L.marker(e.latlng, { icon: customIcon }).addTo(signsLayerGroup).bindPopup(`<b>${title}</b><br>${lat}, ${lng}`).openPopup();
             }
         });
 
-        // Геокодування / парсинг координат
         async function geocodeOrParse(input) {
             const trimmed = input.trim();
             const coordRegex = /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/;
-            
             if (coordRegex.test(trimmed)) {
-                const [lat, lng] = trimmed.split(',').map(Number);
-                return [lat, lng];
+                return trimmed.split(',').map(Number);
             } else {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmed)}, Україна`);
-                const data = await response.json();
-                if (data && data.length > 0) {
-                    return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                } else {
-                    throw new Error(`Не вдалося знайти населений пункт: ${trimmed}`);
-                }
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmed)}, Україна`);
+                const data = await res.json();
+                if (data && data.length > 0) return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                else throw new Error(`Не знайдено: ${trimmed}`);
             }
         }
 
-        // Побудова автомаршруту (OSRM)
         async function buildAutoRoute() {
             const inputVal = document.getElementById("routePoints").value;
-            if (!inputVal || inputVal === "0") {
-                alert("Будь ласка, введіть населені пункти або виберіть точки на карті.");
-                return;
-            }
-
+            if (!inputVal || inputVal === "0") return alert("Введіть точки маршруту.");
             const rawPoints = inputVal.split(';').filter(p => p.trim() !== "");
-            if (rawPoints.length < 2) {
-                alert("Для побудови маршруту потрібно мінімум 2 точки.");
-                return;
-            }
+            if (rawPoints.length < 2) return alert("Потрібно мінімум 2 точки.");
 
             try {
                 const coords = [];
-                for (let pt of rawPoints) {
-                    const pointCoords = await geocodeOrParse(pt);
-                    coords.push(pointCoords);
-                }
-
+                for (let pt of rawPoints) coords.push(await geocodeOrParse(pt));
                 const osrmCoords = coords.map(c => `${c[1]},${c[0]}`).join(';');
-                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${osrmCoords}?overview=full&geometries=geojson`;
-
-                const routeRes = await fetch(osrmUrl);
-                const routeData = await routeRes.json();
+                const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${osrmCoords}?overview=full&geometries=geojson`);
+                const routeData = await res.json();
 
                 if (routeData.code === "Ok") {
                     routeLayerGroup.clearLayers();
-
-                    const geometry = routeData.routes[0].geometry;
-                    const routeLine = L.geoJSON(geometry, {
-                        style: { color: '#2563eb', weight: 5, opacity: 0.8 }
-                    }).addTo(routeLayerGroup);
-
-                    coords.forEach((coord, index) => {
-                        L.marker(coord).addTo(routeLayerGroup)
-                            .bindPopup(`Точка ${index + 1}: ${rawPoints[index]}`);
-                    });
-
+                    const routeLine = L.geoJSON(routeData.routes[0].geometry, { style: { color: '#2563eb', weight: 5 } }).addTo(routeLayerGroup);
+                    coords.forEach((coord, i) => L.marker(coord).addTo(routeLayerGroup).bindPopup(`Точка ${i + 1}: ${rawPoints[i]}`));
                     map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
-                } else {
-                    alert("Не вдалося прокласти автомобільний маршрут між вказаними точками.");
-                }
-
-            } catch (err) {
-                alert(err.message || "Помилка при побудові маршруту.");
-            }
+                } else alert("Не вдалося прокласти маршрут.");
+            } catch (err) { alert(err.message); }
         }
 
-        // Розрахунок дози
-        function calculateDose() {
-            const P = parseFloat(document.getElementById("doseRate").value) || 0;
-            const T = parseFloat(document.getElementById("exposureTime").value) || 0;
-            const Kz = parseFloat(document.getElementById("protectionCoeff").value) || 1;
-
-            const dose = (P * T) / Kz;
-            document.getElementById("doseResult").innerText = `Очікувана доза: ${dose.toFixed(2)} (мЗв)`;
-        }
-
-        // Завантаження карти в HTML
         function downloadMapHTML() {
-            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-            const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+            const blob = new Blob(["<!DOCTYPE html>\n" + document.documentElement.outerHTML], { type: "text/html;charset=utf-8" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
             a.download = "карта_обстановки.html";
-            document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
         }
     </script>
 </body>
