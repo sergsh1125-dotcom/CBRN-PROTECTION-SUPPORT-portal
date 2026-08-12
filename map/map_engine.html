@@ -45,7 +45,7 @@
 
         /* Текстові підписи для маршрутів */
         .route-label {
-            background: rgba(0, 0, 0, 0.75) !important;
+            background: rgba(0, 0, 0, 0.85) !important;
             border: 1px solid #d97706 !important;
             color: #fff !important;
             font-size: 11px !important;
@@ -96,6 +96,7 @@
             display: flex;
             gap: 4px;
             flex-grow: 1;
+            flex-wrap: nowrap;
         }
         .btn-group-main button {
             height: 32px;
@@ -172,7 +173,7 @@
         #windWidget {
             position: absolute;
             left: 10px;
-            bottom: 95px;
+            bottom: 130px;
             z-index: 9998;
             background: rgba(26, 26, 26, 0.9);
             color: #FFD600;
@@ -214,11 +215,11 @@
 
         @media (max-width: 480px) {
             #panel { padding: 6px; }
-            .panel-row { gap: 4px; }
+            .panel-row { gap: 4px; flex-wrap: wrap; }
             #panel select, #panel input, .btn-group-main button, #panel .btn-action, .btn-export { font-size: 10px; height: 30px; }
             .input-container { height: 30px; padding: 0 3px; }
             .input-container input { width: 35px !important; }
-            #windWidget { bottom: 90px; width: 70px; }
+            #windWidget { bottom: 135px; width: 70px; }
         }
     </style>
 </head>
@@ -237,6 +238,20 @@
     </div>
 
     <div id="panel">
+        <!-- РЯДОК 1: Автомаршрут -->
+        <div class="panel-row" style="border-bottom: 1px solid #333; padding-bottom: 4px;">
+            <div class="input-container" style="flex-grow: 1;">
+                <span>Старт:</span>
+                <input id="routeStart" type="text" placeholder="Населений пункт або 50.45, 30.52" style="width: 100% !important; text-align: left;">
+            </div>
+            <div class="input-container" style="flex-grow: 1;">
+                <span>Фініш:</span>
+                <input id="routeEnd" type="text" placeholder="Населений пункт або 50.45, 30.52" style="width: 100% !important; text-align: left;">
+            </div>
+            <button class="btn-action" style="background:#2563eb; color:#fff;" onclick="buildAutoRoute()">🚗 Автомаршрут</button>
+        </div>
+
+        <!-- РЯДОК 2: Основні знаки та Ручний режим -->
         <div class="panel-row">
             <select id="symbolSelect">
                 <option value="">-- Знак РХБЗ --</option>
@@ -253,7 +268,7 @@
             </select>
 
             <div class="btn-group-main">
-                <button style="background:#d97706;" onclick="enableReconRoute()">Маршрут розвідки</button>
+                <button style="background:#d97706;" onclick="enableReconRoute()">✍️ Маршрут (ручний)</button>
                 <button onclick="enableText()">Текст</button>
                 <button style="background:#5c3a21;" onclick="enableEllipseMode()">Еліпс</button>
                 <button class="btn-finish-mode" onclick="deactivateDrawTools()">Завершити знак</button>
@@ -261,6 +276,7 @@
             </div>
         </div>
 
+        <!-- РЯДОК 3: Метео та Експорт -->
         <div class="panel-row">
             <div class="input-container">
                 <span>Вітер°:</span>
@@ -325,13 +341,7 @@
     });
 
     map.pm.setGlobalOptions({ 
-        measurements: { 
-            display: true,       
-            totalLength: true,   
-            segmentLength: true, 
-            radius: true,        
-            area: true           
-        } 
+        measurements: { display: true, totalLength: true, segmentLength: true, radius: true, area: true } 
     });
     map.pm.setLang('uk');
 
@@ -365,6 +375,7 @@
         document.getElementById("symbolSelect").value = "";
     }
 
+    // 1) РУЧНИЙ РЕЖИМ МАРШРУТУ
     function enableReconRoute() {
         deactivateDrawTools();
         isDrawingRecon = true;
@@ -374,7 +385,88 @@
         });
     }
 
-    // Розрахунок довжини маршруту в метрах/кілометрах
+    // 2) АВТОМАТИЧНИЙ РЕЖИМ МАРШРУТУ (Геокодування + OSRM)
+    async function geocodeInput(query) {
+        query = query.trim();
+        if (!query) return null;
+
+        // Перевіряємо чи це координати (напр. "50.45, 30.52")
+        let coordMatch = query.match(/^([-+]?\d+\.?\d*)[,\s]+([-+]?\d+\.?\d*)$/);
+        if (coordMatch) {
+            return [parseFloat(coordMatch[1]), parseFloat(coordMatch[2])];
+        }
+
+        // Якщо це текстова назва населеного пункту -> викликаємо Nominatim API
+        try {
+            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+            let data = await response.json();
+            if (data && data.length > 0) {
+                return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+            }
+        } catch (e) {
+            console.error("Помилка геокодування:", e);
+        }
+        return null;
+    }
+
+    async function buildAutoRoute() {
+        let startVal = document.getElementById("routeStart").value;
+        let endVal = document.getElementById("routeEnd").value;
+
+        if (!startVal || !endVal) {
+            alert("Будь ласка, введіть точки 'Старт' та 'Фініш' (назву населеного пункту або координати)!");
+            return;
+        }
+
+        let startCoords = await geocodeInput(startVal);
+        let endCoords = await geocodeInput(endVal);
+
+        if (!startCoords) { alert(`Не вдалося знайти точку Старту: "${startVal}"`); return; }
+        if (!endCoords) { alert(`Не вдалося знайти точку Фінішу: "${endVal}"`); return; }
+
+        // Запит до OSRM Маршрутизатора
+        try {
+            let osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startCoords[1]},${startCoords[0]};${endCoords[1]},${endCoords[0]}?overview=full&geometries=geojson`;
+            let response = await fetch(osrmUrl);
+            let data = await response.json();
+
+            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                let route = data.routes[0];
+                let distKm = (route.distance / 1000).toFixed(2);
+                let durationMin = Math.round(route.duration / 60);
+
+                let geojson = {
+                    type: "Feature",
+                    geometry: route.geometry,
+                    properties: {}
+                };
+
+                let routeName = `${startVal} ➔ ${endVal} (${distKm} км, ~${durationMin} хв)`;
+
+                let shapeData = {
+                    id: Date.now(),
+                    geojson: geojson,
+                    isRoute: true,
+                    routeName: routeName
+                };
+
+                state.shapes.push(shapeData);
+                saveState();
+                restoreShapes();
+
+                // Центруємо карту на створеному маршруті
+                let tempLayer = L.geoJSON(geojson);
+                map.fitBounds(tempLayer.getBounds(), { padding: [30, 30] });
+
+            } else {
+                alert("Не вдалося прокласти автомобільний маршрут між цими точками!");
+            }
+        } catch (e) {
+            alert("Помилка з'єднання з сервісом маршрутизації OSRM!");
+            console.error(e);
+        }
+    }
+
     function calculatePolylineLength(latlngs) {
         let total = 0;
         for (let i = 0; i < latlngs.length - 1; i++) {
@@ -383,22 +475,16 @@
         return total >= 1000 ? (total / 1000).toFixed(2) + " км" : Math.round(total) + " м";
     }
 
-    // Збереження фігур (у т.ч. маршрутів розвідки)
+    // Збереження стандартних малюнків та ручних маршрутів
     map.on('pm:create', function(e) {
         let layer = e.layer;
-        let shapeData = { 
-            id: Date.now(), 
-            geojson: layer.toGeoJSON(), 
-            isCircle: false, 
-            isEllipse: false,
-            isRoute: false 
-        };
+        let shapeData = { id: Date.now(), geojson: layer.toGeoJSON(), isCircle: false, isEllipse: false, isRoute: false };
 
         if (isDrawingRecon || e.shape === 'Line') {
             shapeData.isRoute = true;
             let latlngs = layer.getLatLngs();
             let distStr = calculatePolylineLength(latlngs);
-            let name = prompt("Введіть назву/номер маршруту розвідки:", "Маршрут розвідки №1");
+            let name = prompt("Введіть назву/номер маршруту розвідки:", "Маршрут розвідки (ручний)");
             shapeData.routeName = (name ? name : "Маршрут розвідки") + ` (${distStr})`;
             isDrawingRecon = false;
         } else if (e.shape === 'Circle') {
@@ -421,7 +507,6 @@
         let ellipses = state.shapes.filter(s => s && s.isEllipse && s.radiusX && s.radiusY);
         let otherShapes = state.shapes.filter(s => s && (!s.isEllipse || !s.radiusX || !s.radiusY));
 
-        // Малювання звичайних фігур та маршрутів
         otherShapes.forEach((s) => {
             let layer;
             if (s.isRoute && s.geojson) {
@@ -429,11 +514,7 @@
                     style: { color: "#d97706", weight: 4, dashArray: "8, 8" }
                 });
                 if (s.routeName) {
-                    layer.bindTooltip(s.routeName, { 
-                        permanent: true, 
-                        direction: 'center', 
-                        className: 'route-label' 
-                    });
+                    layer.bindTooltip(s.routeName, { permanent: true, direction: 'center', className: 'route-label' });
                 }
             } else if (s.isCircle && s.circleRadius) {
                 let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
@@ -455,7 +536,7 @@
             }
         });
 
-        // Малювання еліпсів (AEGL)
+        // Еліпси (AEGL)
         let groupedEllipses = {};
         ellipses.forEach(s => {
             let gId = s.groupId || s.id;
@@ -472,7 +553,6 @@
                 let points = [];
                 let centerLat = s.ellipseCenter[0];
                 let centerLng = s.ellipseCenter[1];
-                
                 let windRad = (s.tilt || 0) * Math.PI / 180;
                 let angleRad = windRad + Math.PI; 
 
@@ -639,7 +719,7 @@
             link.href = canvas.toDataURL("image/png");
             link.click();
             document.getElementById("panel").style.display = "flex";
-            document.getElementById("windWidget").style.bottom = "95px";
+            document.getElementById("windWidget").style.bottom = "130px";
         });
     }
 
