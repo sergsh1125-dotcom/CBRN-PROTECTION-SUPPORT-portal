@@ -707,7 +707,7 @@
             state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
             saveState();
             render();
-            deactivateDrawTools();
+            // Знак НЕ скидається — можна клацати по карті і ставити його далі
         }
     });
 
