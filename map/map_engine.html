@@ -228,7 +228,7 @@
     <div id="panel">
         <div class="panel-row">
             <select id="symbolSelect">
-                <option value="">-- Знак РХБЗ--</option>
+                <option value="">-- Знак РХБЗ --</option>
                 <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-PROTECTION-SUPPORT-portal@main/assets/svg/detect_radiation.svg">Точка радіоактивного забруднення</option>
                 <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-PROTECTION-SUPPORT-portal@main/assets/svg/detect_chemical.svg">Точка хімічного забруднення</option>
                 <option value="https://cdn.jsdelivr.net/gh/sergsh1125-dotcom/CBRN-PROTECTION-SUPPORT-portal@main/assets/svg/detect_biological.svg">Точка біологічного зараження</option>
@@ -302,14 +302,14 @@
         position: 'topleft',
         drawMarker: false,
         drawCircleMarker: false,
-        drawPolyline: true,     // Лінія
+        drawPolyline: true,      // Лінія
         drawRectangle: false,
-        drawPolygon: true,      // Багатокутник
-        drawCircle: true,       // Коло
-        editMode: true,         // Коректування / Редагування
+        drawPolygon: true,       // Багатокутник
+        drawCircle: true,        // Коло
+        editMode: true,          // Коректування / Редагування
         dragMode: false,
         cutPolygon: false,
-        removalMode: true       // Видалення
+        removalMode: true        // Видалення
     });
 
     map.pm.setGlobalOptions({ 
@@ -483,7 +483,6 @@
         textMode = false; 
         ellipseMode = false;
         
-        // Вимикаємо малювання фігур Geoman, щоб клік ставив маркер
         if (selectedIcon) stopGeomanDraw();
     };
 
