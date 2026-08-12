@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Geoman (Єдиний інструмент для малювання фігур) -->
+    <!-- Geoman -->
     <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.css" />
     <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.min.js"></script>
 
@@ -41,6 +41,18 @@
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
+        }
+
+        /* Текстові підписи для маршрутів */
+        .route-label {
+            background: rgba(0, 0, 0, 0.75) !important;
+            border: 1px solid #d97706 !important;
+            color: #fff !important;
+            font-size: 11px !important;
+            font-weight: bold !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+            white-space: nowrap !important;
         }
 
         /* --- НИЖНЯ ПАНЕЛЬ УПРАВЛІННЯ --- */
@@ -99,7 +111,6 @@
         }
         .btn-group-main button:hover { background: #555; }
 
-        /* Кнопка завершення режиму */
         .btn-finish-mode {
             background: #d32f2f !important;
             border: 1px solid #b71c1c !important;
@@ -242,6 +253,7 @@
             </select>
 
             <div class="btn-group-main">
+                <button style="background:#d97706;" onclick="enableReconRoute()">Маршрут розвідки</button>
                 <button onclick="enableText()">Текст</button>
                 <button style="background:#5c3a21;" onclick="enableEllipseMode()">Еліпс</button>
                 <button class="btn-finish-mode" onclick="deactivateDrawTools()">Завершити знак</button>
@@ -274,8 +286,9 @@
     let selectedIcon = "";
     let textMode = false;
     let ellipseMode = false;
+    let isDrawingRecon = false;
 
-    // --- ІНІЦІАЛІЗАЦІЯ КАРТИ ТА ШАРІВ (OSM + СУПУТНИК) ---
+    // --- ІНІЦІАЛІЗАЦІЯ КАРТИ ТА ШАРІВ ---
     let map = L.map('map', { zoomControl: true }).setView([48.3, 31.1], 6);
 
     let osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -288,7 +301,6 @@
         attribution: 'Tiles © Esri'
     });
 
-    // Додаємо перемикач карт у верхній правий кут
     L.control.layers({
         "Схема (OSM)": osmLayer,
         "Супутник": satelliteLayer
@@ -302,14 +314,14 @@
         position: 'topleft',
         drawMarker: false,
         drawCircleMarker: false,
-        drawPolyline: true,      // Лінія
+        drawPolyline: true,
         drawRectangle: false,
-        drawPolygon: true,       // Багатокутник
-        drawCircle: true,        // Коло
-        editMode: true,          // Коректування / Редагування
+        drawPolygon: true,
+        drawCircle: true,
+        editMode: true,
         dragMode: false,
         cutPolygon: false,
-        removalMode: true        // Видалення
+        removalMode: true
     });
 
     map.pm.setGlobalOptions({ 
@@ -338,31 +350,58 @@
         }
     }
 
-    // Вимкнення інструментів Geoman без зачіпання вибраного знаку
     function stopGeomanDraw() {
-        if (map.pm.globalDrawModeEnabled()) {
-            map.pm.disableDraw();
-        }
-        if (map.pm.globalEditModeEnabled()) {
-            map.pm.disableGlobalEditMode();
-        }
+        if (map.pm.globalDrawModeEnabled()) map.pm.disableDraw();
+        if (map.pm.globalEditModeEnabled()) map.pm.disableGlobalEditMode();
+        if (map.pm.globalRemovalModeEnabled()) map.pm.disableGlobalRemovalMode();
     }
 
-    // Повне вимкнення всіх активних режимів внесення знаків (на кнопку "Завершити знак")
     function deactivateDrawTools() {
         stopGeomanDraw();
         textMode = false;
         ellipseMode = false;
+        isDrawingRecon = false;
         selectedIcon = "";
         document.getElementById("symbolSelect").value = "";
     }
 
-    // Збереження фігур Geoman при створенні
+    function enableReconRoute() {
+        deactivateDrawTools();
+        isDrawingRecon = true;
+        map.pm.enableDraw('Line', {
+            snappable: true,
+            pathOptions: { color: '#d97706', weight: 4, dashArray: '8, 8' }
+        });
+    }
+
+    // Розрахунок довжини маршруту в метрах/кілометрах
+    function calculatePolylineLength(latlngs) {
+        let total = 0;
+        for (let i = 0; i < latlngs.length - 1; i++) {
+            total += latlngs[i].distanceTo(latlngs[i + 1]);
+        }
+        return total >= 1000 ? (total / 1000).toFixed(2) + " км" : Math.round(total) + " м";
+    }
+
+    // Збереження фігур (у т.ч. маршрутів розвідки)
     map.on('pm:create', function(e) {
         let layer = e.layer;
-        let shapeData = { id: Date.now(), geojson: layer.toGeoJSON(), isCircle: false, isEllipse: false };
+        let shapeData = { 
+            id: Date.now(), 
+            geojson: layer.toGeoJSON(), 
+            isCircle: false, 
+            isEllipse: false,
+            isRoute: false 
+        };
 
-        if (e.shape === 'Circle') {
+        if (isDrawingRecon || e.shape === 'Line') {
+            shapeData.isRoute = true;
+            let latlngs = layer.getLatLngs();
+            let distStr = calculatePolylineLength(latlngs);
+            let name = prompt("Введіть назву/номер маршруту розвідки:", "Маршрут розвідки №1");
+            shapeData.routeName = (name ? name : "Маршрут розвідки") + ` (${distStr})`;
+            isDrawingRecon = false;
+        } else if (e.shape === 'Circle') {
             shapeData.isCircle = true;
             shapeData.circleRadius = layer.getRadius();
             let latlng = layer.getLatLng();
@@ -370,7 +409,6 @@
         }
 
         map.removeLayer(layer);
-
         state.shapes.push(shapeData);
         saveState();
         restoreShapes();
@@ -383,11 +421,21 @@
         let ellipses = state.shapes.filter(s => s && s.isEllipse && s.radiusX && s.radiusY);
         let otherShapes = state.shapes.filter(s => s && (!s.isEllipse || !s.radiusX || !s.radiusY));
 
-        ellipses.sort((a, b) => a.id - b.id);
-
+        // Малювання звичайних фігур та маршрутів
         otherShapes.forEach((s) => {
             let layer;
-            if (s.isCircle && s.circleRadius) {
+            if (s.isRoute && s.geojson) {
+                layer = L.geoJSON(s.geojson, {
+                    style: { color: "#d97706", weight: 4, dashArray: "8, 8" }
+                });
+                if (s.routeName) {
+                    layer.bindTooltip(s.routeName, { 
+                        permanent: true, 
+                        direction: 'center', 
+                        className: 'route-label' 
+                    });
+                }
+            } else if (s.isCircle && s.circleRadius) {
                 let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
                 layer = L.circle(center, { radius: s.circleRadius, color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
             } else if (s.geojson) {
@@ -399,26 +447,24 @@
                 layer.on("click", function(e) {
                     if (map.pm.globalRemovalModeEnabled()) {
                         L.DomEvent.stopPropagation(e);
-                        let globalIdx = state.shapes.findIndex(shape => shape.id === s.id);
-                        if (globalIdx !== -1) {
-                            state.shapes.splice(globalIdx, 1);
-                            saveState();
-                            restoreShapes();
-                        }
+                        state.shapes = state.shapes.filter(shape => shape.id !== s.id);
+                        saveState();
+                        restoreShapes();
                     }
                 });
             }
         });
 
+        // Малювання еліпсів (AEGL)
         let groupedEllipses = {};
         ellipses.forEach(s => {
-            let baseId = Math.floor(s.id / 2000) * 2000; 
-            if (!groupedEllipses[baseId]) groupedEllipses[baseId] = [];
-            groupedEllipses[baseId].push(s);
+            let gId = s.groupId || s.id;
+            if (!groupedEllipses[gId]) groupedEllipses[gId] = [];
+            groupedEllipses[gId].push(s);
         });
 
-        for (let baseId in groupedEllipses) {
-            let currentGroup = groupedEllipses[baseId];
+        for (let gId in groupedEllipses) {
+            let currentGroup = groupedEllipses[gId];
             currentGroup.sort((a, b) => b.radiusX - a.radiusX);
 
             currentGroup.forEach((s, index) => {
@@ -457,18 +503,14 @@
                 }
 
                 let polygonLayer = L.polygon(points, {
-                    color: zoneColor == "#cc0000" ? "#8b0000" : "black", 
+                    color: zoneColor === "#cc0000" ? "#8b0000" : "black", 
                     weight: 2, fillColor: zoneColor, fillOpacity: zoneOpacity
                 }).addTo(drawnItems);
 
                 polygonLayer.on("click", function(e) {
                     L.DomEvent.stopPropagation(e);
-                    if(confirm(`Видалити цю хмару забруднення AEGL?`)) {
-                        state.shapes = state.shapes.filter(shape => {
-                            if (!shape.isEllipse) return true;
-                            let shapeBaseId = Math.floor(shape.id / 2000) * 2000;
-                            return shapeBaseId !== parseInt(baseId);
-                        });
+                    if (confirm(`Видалити цю хмару забруднення AEGL?`)) {
+                        state.shapes = state.shapes.filter(shape => (shape.groupId || shape.id) != gId);
                         saveState();
                         restoreShapes();
                     }
@@ -477,18 +519,18 @@
         }
     }
 
-    // --- ОБРОБКА ВИБОРУ ЗНАКА СИМВОЛУ ---
     document.getElementById("symbolSelect").onchange = function(e) {
         selectedIcon = e.target.value;
         textMode = false; 
         ellipseMode = false;
-        
+        isDrawingRecon = false;
         if (selectedIcon) stopGeomanDraw();
     };
 
     function enableText() { 
         textMode = true; 
         ellipseMode = false; 
+        isDrawingRecon = false;
         selectedIcon = ""; 
         document.getElementById("symbolSelect").value = ""; 
         stopGeomanDraw(); 
@@ -497,6 +539,7 @@
     function enableEllipseMode() { 
         ellipseMode = true; 
         textMode = false; 
+        isDrawingRecon = false;
         selectedIcon = ""; 
         document.getElementById("symbolSelect").value = ""; 
         stopGeomanDraw(); 
@@ -545,7 +588,7 @@
     }
 
     map.on("click", function(e) {
-        if (map.pm.globalDrawModeEnabled()) return;
+        if (map.pm.globalDrawModeEnabled() || map.pm.globalRemovalModeEnabled()) return;
 
         if (textMode) {
             let txt = prompt("Введіть текст:");
@@ -565,11 +608,11 @@
             
             let windInputVal = document.getElementById("windInput").value;
             let angle = windInputVal !== "" ? parseFloat(windInputVal) : 0;
-            let uniqueId = Date.now();
+            let groupId = Date.now();
 
-            state.shapes.push({ id: uniqueId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX), radiusY: parseFloat(rY), tilt: angle });
-            state.shapes.push({ id: uniqueId + 1, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.6, radiusY: parseFloat(rY) * 0.6, tilt: angle });
-            state.shapes.push({ id: uniqueId + 2, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.3, radiusY: parseFloat(rY) * 0.3, tilt: angle });
+            state.shapes.push({ id: groupId + "_1", groupId: groupId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX), radiusY: parseFloat(rY), tilt: angle });
+            state.shapes.push({ id: groupId + "_2", groupId: groupId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.6, radiusY: parseFloat(rY) * 0.6, tilt: angle });
+            state.shapes.push({ id: groupId + "_3", groupId: groupId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: parseFloat(rX) * 0.3, radiusY: parseFloat(rY) * 0.3, tilt: angle });
 
             saveState();
             restoreShapes();
@@ -581,6 +624,7 @@
             state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
             saveState();
             render();
+            deactivateDrawTools();
         }
     });
 
