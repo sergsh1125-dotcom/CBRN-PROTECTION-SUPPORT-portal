@@ -43,8 +43,8 @@
             box-shadow: none !important;
         }
 
-        /* Текстові підписи для маршрутів */
-        .route-label {
+        /* Текстові підписи для маршрутів та кіл */
+        .route-label, .circle-label {
             background: rgba(0, 0, 0, 0.85) !important;
             border: 1px solid #d97706 !important;
             color: #fff !important;
@@ -53,6 +53,10 @@
             padding: 2px 6px !important;
             border-radius: 4px !important;
             white-space: nowrap !important;
+        }
+
+        .circle-label {
+            border-color: #ffd600 !important;
         }
 
         /* --- НИЖНЯ ПАНЕЛЬ УПРАВЛІННЯ --- */
@@ -300,6 +304,11 @@
     let ellipseMode = false;
     let isDrawingRecon = false;
 
+    // Допоміжна функція форматування радіуса/відстані
+    function formatRadius(meters) {
+        return meters >= 1000 ? (meters / 1000).toFixed(2) + " км" : Math.round(meters) + " м";
+    }
+
     // --- ІНІЦІАЛІЗАЦІЯ КАРТИ ТА ШАРІВ ---
     let map = L.map('map', { zoomControl: true }).setView([48.3, 31.1], 6);
 
@@ -341,6 +350,22 @@
     });
     map.pm.setLang('uk');
 
+    // --- ДИНАМІЧНИЙ ВИВІД РАДІУСА ПІД ЧАС МАЛЮВАННЯ КОЛА ---
+    map.on('pm:drawstart', ({ workingLayer, shape }) => {
+        if (shape === 'Circle') {
+            workingLayer.on('pm:change', (e) => {
+                const radius = e.radius;
+                if (radius) {
+                    workingLayer.bindTooltip(`R = ${formatRadius(radius)}`, {
+                        permanent: true,
+                        direction: 'center',
+                        className: 'circle-label'
+                    }).openTooltip();
+                }
+            });
+        }
+    });
+
     function saveState() { localStorage.setItem("cbrn_state", JSON.stringify(state)); }
     
     function loadState() {
@@ -381,7 +406,7 @@
         });
     }
 
-    // 2) АВТОМАТИЧНИЙ РЕЖИМ МАРШРУТУ (Підтримка кількох точок через ;)
+    // 2) АВТОМАТИЧНИЙ РЕЖИМ МАРШРУТУ
     async function geocodeInput(query) {
         query = query.trim();
         if (!query) return null;
@@ -476,7 +501,7 @@
         for (let i = 0; i < latlngs.length - 1; i++) {
             total += latlngs[i].distanceTo(latlngs[i + 1]);
         }
-        return total >= 1000 ? (total / 1000).toFixed(2) + " км" : Math.round(total) + " м";
+        return formatRadius(total);
     }
 
     map.on('pm:create', function(e) {
@@ -522,6 +547,13 @@
             } else if (s.isCircle && s.circleRadius) {
                 let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
                 layer = L.circle(center, { radius: s.circleRadius, color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
+                
+                // Додавання підпису з радіусом для збереженого кола
+                layer.bindTooltip(`R = ${formatRadius(s.circleRadius)}`, {
+                    permanent: true,
+                    direction: 'center',
+                    className: 'circle-label'
+                });
             } else if (s.geojson) {
                 layer = L.geoJSON(s.geojson, { style: { color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 } });
             }
@@ -707,7 +739,6 @@
             state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
             saveState();
             render();
-            // Знак НЕ скидається — можна клацати по карті і ставити його далі
         }
     });
 
