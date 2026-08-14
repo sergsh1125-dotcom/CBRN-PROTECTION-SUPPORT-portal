@@ -668,13 +668,14 @@
     }
     
     function enableEllipseMode() { 
-        ellipseMode = true; 
-        textMode = false; 
-        isDrawingRecon = false;
-        selectedIcon = ""; 
-        document.getElementById("symbolSelect").value = ""; 
-        stopGeomanDraw(); 
-    }
+    ellipseMode = true; 
+    textMode = false; 
+    isDrawingRecon = false;
+    selectedIcon = ""; 
+    document.getElementById("symbolSelect").value = ""; 
+    stopGeomanDraw(); 
+    alert("Клікніть на карті у точці вишу (джерела викиду) для побудови еліпса AEGL.");
+}
     
     function clearAll() {
         if(confirm("Очистити всю обстановку на карті?")) {
@@ -725,49 +726,70 @@
         });
     }
 
-    map.on("click", function(e) {
-        if (map.pm.globalDrawModeEnabled() || map.pm.globalRemovalModeEnabled()) return;
+   map.on("click", function(e) {
+    if (map.pm.globalDrawModeEnabled() || map.pm.globalRemovalModeEnabled()) return;
 
-        if (textMode) {
-            let txt = prompt("Введіть текст:");
-            if (!txt) return;
-            state.objects.push({ type: "text", lat: e.latlng.lat, lng: e.latlng.lng, text: txt });
-            saveState();
-            render();
-            textMode = false;
-            return;
-        }
-
-        if (ellipseMode) {
-            let lengthInput = prompt("Довжина зони AEGL у метрах (наприклад, 5000):", "5000");
-            if (!lengthInput) return;
-            let widthInput = prompt("Ширина зони AEGL у метрах (наприклад, 2000):", "2000");
-            if (!widthInput) return;
-            
-            let rX = parseFloat(lengthInput) / 2;
-            let rY = parseFloat(widthInput) / 2;
-
-            let windInputVal = document.getElementById("windInput").value;
-            let angle = windInputVal !== "" ? parseFloat(windInputVal) : 0;
-            let groupId = Date.now();
-
-            state.shapes.push({ id: groupId + "_1", groupId: groupId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: rX, radiusY: rY, tilt: angle });
-            state.shapes.push({ id: groupId + "_2", groupId: groupId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: rX * 0.6, radiusY: rY * 0.6, tilt: angle });
-            state.shapes.push({ id: groupId + "_3", groupId: groupId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: rX * 0.3, radiusY: rY * 0.3, tilt: angle });
-
-            saveState();
-            restoreShapes();
+    // --- БЛОК ПОБУДОВИ ЕЛІПСА AEGL ЗА ШВИДКІСТЮ ВІТРУ ---
+    if (ellipseMode) {
+        let lengthInput = prompt("Введіть глибину/довжину еліпса (у метрах, наприклад 5000):", "5000");
+        if (!lengthInput || isNaN(parseFloat(lengthInput))) {
             ellipseMode = false;
             return;
         }
 
-        if (selectedIcon) {
-            state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
-            saveState();
-            render();
-        }
-    });
+        let totalLength = parseFloat(lengthInput);
+        let rX = totalLength / 2; // Напіввісь по довжині
 
+        // Зчитуємо метео з віджета
+        let windDegVal = document.getElementById("windInput").value;
+        let windSpeedVal = document.getElementById("windSpeedInput").value;
+
+        let windDeg = windDegVal !== "" ? parseFloat(windDegVal) : 0;
+        let windSpeed = windSpeedVal !== "" ? parseFloat(windSpeedVal) : 0;
+
+        // Динамічний розрахунок ширини rY на основі швидкості вітру
+        let widthFactor = 0.25; // За замовчуванням (помірний вітер)
+
+        if (windSpeed <= 1.5) {
+            widthFactor = 0.40; // Слабкий вітер -> широкий еліпс (~1:2.5)
+        } else if (windSpeed > 1.5 && windSpeed <= 4.0) {
+            widthFactor = 0.25; // Помірний вітер -> середній еліпс (~1:4)
+        } else {
+            widthFactor = 0.15; // Сильний вітер -> вузький еліпс (~1:6.5)
+        }
+
+        let rY = rX * widthFactor; // Авто-ширина
+        let groupId = Date.now();
+
+        // Формуємо 3 зони AEGL (30%, 60%, 100% глибини)
+        state.shapes.push({ id: groupId + "_1", groupId: groupId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: rX, radiusY: rY, tilt: windDeg });
+        state.shapes.push({ id: groupId + "_2", groupId: groupId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: rX * 0.6, radiusY: rY * 0.6, tilt: windDeg });
+        state.shapes.push({ id: groupId + "_3", groupId: groupId, isEllipse: true, ellipseCenter: [e.latlng.lat, e.latlng.lng], radiusX: rX * 0.3, radiusY: rY * 0.3, tilt: windDeg });
+
+        saveState();
+        restoreShapes();
+        ellipseMode = false;
+        return;
+    }
+
+    // Режим тексту
+    if (textMode) {
+        let txt = prompt("Введіть текст:");
+        if (!txt) return;
+        state.objects.push({ type: "text", lat: e.latlng.lat, lng: e.latlng.lng, text: txt });
+        saveState();
+        render();
+        textMode = false;
+        return;
+    }
+
+    // Режим одиночних знаків
+    if (selectedIcon) {
+        state.objects.push({ type: "symbol", lat: e.latlng.lat, lng: e.latlng.lng, icon: selectedIcon });
+        saveState();
+        render();
+    }
+});
     function exportPNG() {
         const area = document.getElementById("capture_area");
         document.getElementById("panel").style.display = "none";
