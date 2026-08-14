@@ -123,6 +123,13 @@
         }
         .btn-finish-mode:hover { background: #f44336 !important; }
 
+        .btn-remove-mode {
+            background: #c62828 !important;
+            border: 1px solid #8e0000 !important;
+            color: #fff !important;
+        }
+        .btn-remove-mode:hover { background: #e53935 !important; }
+
         .input-container {
             display: flex;
             align-items: center;
@@ -271,6 +278,7 @@
                 <button style="background:#d97706;" onclick="enableReconRoute()">Маршрут (ручний режим)</button>
                 <button onclick="enableText()">Текст</button>
                 <button style="background:#5c3a21;" onclick="enableEllipseMode()">Еліпс</button>
+                <button class="btn-remove-mode" onclick="toggleRemovalMode()">🗑️ Видалити (кліком)</button>
                 <button class="btn-finish-mode" onclick="deactivateDrawTools()">Завершити знак</button>
                 <button style="background:#8b0000;" onclick="clearAll()">Очистити</button>
             </div>
@@ -394,6 +402,11 @@
         isDrawingRecon = false;
         selectedIcon = "";
         document.getElementById("symbolSelect").value = "";
+    }
+
+    function toggleRemovalMode() {
+        deactivateDrawTools();
+        map.pm.toggleGlobalRemovalMode();
     }
 
     // 1) РУЧНИЙ РЕЖИМ МАРШРУТУ
@@ -548,7 +561,6 @@
                 let center = s.circleCenter ? s.circleCenter : [s.geojson.geometry.coordinates[1], s.geojson.geometry.coordinates[0]];
                 layer = L.circle(center, { radius: s.circleRadius, color: "black", weight: 2, fillColor: "yellow", fillOpacity: 0.3 });
                 
-                // Додавання підпису з радіусом для збереженого кола
                 layer.bindTooltip(`R = ${formatRadius(s.circleRadius)}`, {
                     permanent: true,
                     direction: 'center',
@@ -623,8 +635,12 @@
                 }).addTo(drawnItems);
 
                 polygonLayer.on("click", function(e) {
-                    L.DomEvent.stopPropagation(e);
-                    if (confirm(`Видалити цю хмару забруднення AEGL?`)) {
+                    if (map.pm.globalRemovalModeEnabled()) {
+                        L.DomEvent.stopPropagation(e);
+                        state.shapes = state.shapes.filter(shape => (shape.groupId || shape.id) != gId);
+                        saveState();
+                        restoreShapes();
+                    } else if (confirm(`Видалити цю хмару забруднення AEGL?`)) {
                         state.shapes = state.shapes.filter(shape => (shape.groupId || shape.id) != gId);
                         saveState();
                         restoreShapes();
@@ -693,10 +709,17 @@
             if (marker) {
                 marker.addTo(markersGroup);
                 marker.on("click", function(e) {
-                    L.DomEvent.stopPropagation(e);
-                    state.objects.splice(index, 1);
-                    saveState();
-                    render();
+                    if (map.pm.globalRemovalModeEnabled()) {
+                        L.DomEvent.stopPropagation(e);
+                        state.objects.splice(index, 1);
+                        saveState();
+                        render();
+                    } else if (!textMode && !ellipseMode && !selectedIcon && !isDrawingRecon) {
+                        L.DomEvent.stopPropagation(e);
+                        state.objects.splice(index, 1);
+                        saveState();
+                        render();
+                    }
                 });
             }
         });
@@ -721,7 +744,6 @@
             let widthInput = prompt("Ширина зони AEGL у метрах (наприклад, 2000):", "2000");
             if (!widthInput) return;
             
-            // Перетворюємо повну довжину і ширину в півсі (радіуси)
             let rX = parseFloat(lengthInput) / 2;
             let rY = parseFloat(widthInput) / 2;
 
