@@ -838,18 +838,59 @@
         }
     });
 
-    // --- ЕКСПОРТ В АВТОНОМНИЙ HTML ФАЙЛ ---
-    function exportHTML() {
-        let htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-        let blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
-        let link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `CBRN_Map_SITREP_${Date.now()}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+   // --- ОНОВЛЕНИЙ ЕКСПОРТ В HTML З ЗБЕРЕЖЕННЯМ ОБСТАНОВКИ В КОДІ ---
+function exportHTML() {
+    // 1. Створюємо глибоку копію поточного документа
+    let docCopy = document.documentElement.cloneNode(true);
+
+    // 2. Вшиваємо поточний об'єкт state безпосередньо у скрипт відновлення
+    let stateJson = JSON.stringify(state);
+    
+    // Шукаємо або створюємо тег для збереженого стану
+    let embeddedStateScript = docCopy.querySelector('#embedded-cbrn-state');
+    if (!embeddedStateScript) {
+        embeddedStateScript = document.createElement('script');
+        embeddedStateScript.id = 'embedded-cbrn-state';
+        docCopy.querySelector('head').appendChild(embeddedStateScript);
+    }
+    
+    // Записуємо поточний стан у глобальну змінну всередині збереженого файлу
+    embeddedStateScript.textContent = `window.EMBEDDED_CBRN_STATE = ${stateJson};`;
+
+    // 3. Формуємо підсумковий HTML
+    let htmlContent = "<!DOCTYPE html>\n" + docCopy.outerHTML;
+
+    // 4. Завантажуємо файл
+    let blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `CBRN_Map_SITREP_${Date.now()}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// --- ОНОВЛЕНО ЗЧИТУВАННЯ СТАНУ ПРИ СТАРТІ ---
+function loadState() {
+    // 1. Пріоритет: якщо файл містить вшиту обстановку (window.EMBEDDED_CBRN_STATE)
+    if (window.EMBEDDED_CBRN_STATE) {
+        state = window.EMBEDDED_CBRN_STATE;
+        saveState(); // Синхронізуємо з localStorage нового ПК
+        return;
     }
 
+    // 2. Якщо вшитих даних немає — беремо з localStorage
+    let saved = localStorage.getItem("cbrn_state");
+    if (saved) {
+        try {
+            state = JSON.parse(saved);
+            if (!state.objects) state.objects = [];
+            if (!state.shapes) state.shapes = [];
+        } catch(e) {
+            state = { objects: [], shapes: [] };
+        }
+    }
+}
     function updateWindWidget(deg, speedMs) {
         let visualAngle = (deg + 180) % 360;
         document.getElementById("windArrow").style.transform = `rotate(${visualAngle}deg)`;
