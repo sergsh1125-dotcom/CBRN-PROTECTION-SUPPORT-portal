@@ -838,38 +838,41 @@
         }
     });
 
-   // --- ОНОВЛЕНИЙ ЕКСПОРТ В HTML З ЗБЕРЕЖЕННЯМ ОБСТАНОВКИ В КОДІ ---
+   // --- ПОВНА ФУНКЦІЯ: І ЗБЕРЕЖЕННЯ ОБСТАНОВКИ, І ДАТА/ЧАС У НАЗВІ ---
 function exportHTML() {
-    // 1. Створюємо глибоку копію поточного документа
+    // 1. Створюємо копію документа для збереження
     let docCopy = document.documentElement.cloneNode(true);
 
-    // 2. Вшиваємо поточний об'єкт state безпосередньо у скрипт відновлення
+    // 2. ВШИВАЄМО ПОТОЧНУ ОБСТАНОВКУ (зберігаємо всі об'єкти, знаки, еліпси)
     let stateJson = JSON.stringify(state);
-    
-    // Шукаємо або створюємо тег для збереженого стану
     let embeddedStateScript = docCopy.querySelector('#embedded-cbrn-state');
     if (!embeddedStateScript) {
         embeddedStateScript = document.createElement('script');
         embeddedStateScript.id = 'embedded-cbrn-state';
         docCopy.querySelector('head').appendChild(embeddedStateScript);
     }
-    
-    // Записуємо поточний стан у глобальну змінну всередині збереженого файлу
     embeddedStateScript.textContent = `window.EMBEDDED_CBRN_STATE = ${stateJson};`;
 
-    // 3. Формуємо підсумковий HTML
-    let htmlContent = "<!DOCTYPE html>\n" + docCopy.outerHTML;
+    // 3. ФОРМУЄМО НАЗВУ ФАЙЛУ З ДАТОЮ ТА ЧАСОМ (YYYY-MM-DD_HH-MM)
+    let now = new Date();
+    let year = now.getFullYear();
+    let month = String(now.getMonth() + 1).padStart(2, '0');
+    let day = String(now.getDate()).padStart(2, '0');
+    let hours = String(now.getHours()).padStart(2, '0');
+    let minutes = String(now.getMinutes()).padStart(2, '0');
 
-    // 4. Завантажуємо файл
+    let formattedFileName = `CBRN_map_${year}-${month}-${day}_${hours}-${minutes}.html`;
+
+    // 4. Завантажуємо готовий HTML-файл
+    let htmlContent = "<!DOCTYPE html>\n" + docCopy.outerHTML;
     let blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
     let link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `CBRN_Map_SITREP_${Date.now()}.html`;
+    link.download = formattedFileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 }
-
 // --- ОНОВЛЕНО ЗЧИТУВАННЯ СТАНУ ПРИ СТАРТІ ---
 function loadState() {
     // 1. Пріоритет: якщо файл містить вшиту обстановку (window.EMBEDDED_CBRN_STATE)
