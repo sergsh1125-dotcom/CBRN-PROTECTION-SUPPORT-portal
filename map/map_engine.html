@@ -543,8 +543,8 @@
             shapeData.isRoute = true;
             let latlngs = layer.getLatLngs();
             let distStr = calculatePolylineLength(latlngs);
-            let name = prompt("Введіть назву/номер маршруту розвідки:", "Маршрут розвідки");
-            shapeData.routeName = (name ? name : "Маршрут розвідки") + ` (${distStr})`;
+            let name = prompt("Введіть назву/номер маршруту розвідки:", "Маршрут №");
+            shapeData.routeName = (name ? name : "Маршрут №") + ` (${distStr})`;
             isDrawingRecon = false;
         } else if (e.shape === 'Circle') {
             shapeData.isCircle = true;
