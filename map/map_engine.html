@@ -299,8 +299,9 @@
             <button class="btn-action" onclick="applyWind()">Оновити Метео</button>
             
             <div style="flex-grow: 1;"></div> 
-            <button class="btn-export" style="background:#2e7d32;" onclick="exportHTML()">💾 HTML</button>
-            <button class="btn-export" style="background:#1565c0;" onclick="window.print()">🖨 PDF</button>
+            <button class="btn-export" style="background:#2e7d32;" onclick="exportHTML()">💾 Зберегти HTML</button>
+            <button class="btn-export" style="background:#1565c0;" onclick="window.print()">Друк/зберегти PDF</button>
+            <button class="btn-export" style="background:#6a1b9a;" onclick="openSavedMaps()">Збережені карти</button>
         </div>
     </div>
 </div>
@@ -436,7 +437,8 @@
             pathOptions: { color: '#d97706', weight: 4, dashArray: '8, 8' }
         });
     }
-
+<button class="btn-export" style="background:#2e7d32;" onclick="exportHTML()">💾 HTML</button>
+            <button class="btn-export" style="background:#1565c0;" onclick="window.print()">🖨 PDF</button>
     // 2) АВТОМАТИЧНИЙ РЕЖИМ МАРШРУТУ
     async function geocodeInput(query) {
         query = query.trim();
@@ -634,7 +636,8 @@
         let groupedEllipses = {};
         ellipses.forEach(s => {
             let gId = s.groupId || s.id;
-            if (!groupedEllipses[gId]) groupedEllipses[gId] = [];
+            if (!groupedEllipses[gId]) groupedEllipses[gId] <button class="btn-export" style="background:#2e7d32;" onclick="exportHTML()">💾 HTML</button>
+            <button class="btn-export" style="background:#1565c0;" onclick="window.print()">🖨 PDF</button>= [];
             groupedEllipses[gId].push(s);
         });
 
@@ -837,7 +840,12 @@
             render();
         }
     });
-
+function openSavedMaps() {
+    window.open(
+        "https://sergsh1125-dotcom.github.io/CBRN-PROTECTION-SUPPORT-portal/saved_maps/",
+        "_blank"
+    );
+}
    // --- ПОВНА ФУНКЦІЯ: І ЗБЕРЕЖЕННЯ ОБСТАНОВКИ, І ДАТА/ЧАС У НАЗВІ ---
 function exportHTML() {
     // 1. Створюємо копію документа для збереження
