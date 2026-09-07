@@ -105,7 +105,8 @@ with col_left:
     st.link_button("1.2. Карта радіаційного моніторингу Укргідромету", "https://www.meteo.gov.ua/#RADIO")
     st.link_button("1.3. Карта радіаційного моніторингу країн ЄС", "https://remap.jrc.ec.europa.eu/Advanced.aspx")
     st.link_button("1.4. Прогноз масштабів хім. аварії (forecast)", "http://forecast.inf.ua/")
-    st.link_button("1.5. Карта фактичної РХБ обстановки", "https://map-obstanovka-vuvukyx4vwu9jrhuv68vcg.streamlit.app/")
+    st.link_button("1.5. Прогноз масштабів хім. аварії", "https://chemical-accident-prediction-xcxsiihdh5ctz3mzn7jtpt.streamlit.app/")
+    st.link_button("1.6. Карта фактичної РХБ обстановки", "https://map-obstanovka-vuvukyx4vwu9jrhuv68vcg.streamlit.app/")
     st.info("💡 Координати на карті фактичної РХБ обстановки завантажуються кліком мишки.")
 
     st.markdown('<p class="module-header">МОДУЛЬ 2. БАЗИ ДАНИХ</p>', unsafe_allow_html=True)
